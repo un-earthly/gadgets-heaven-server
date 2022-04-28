@@ -6,6 +6,10 @@ const port = process.env.PORT || 80
 app.use(cors())
 app.use(express.json())
 
+
+// db
+
+// serving / api
 app.get('/', (req, res) => {
     res.send('server is running')
 })
