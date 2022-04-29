@@ -10,13 +10,12 @@ app.use(express.json())
 
 // db
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.USER_NAME}:${process.env.PASSWORD}@cluster0.34b5j.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 const run = async () => {
     try {
         client.connect()
-        console.log('success')
 
         const inventoryCollection = client.db('gadgetsDB').collection('gadgets')
         // serve all api
@@ -24,7 +23,10 @@ const run = async () => {
             res.send(await inventoryCollection.find().toArray())
         })
 
-        //
+        // serve one by filtering with id
+        app.get('/inventory/:id', async (req, res) => {
+            res.send(await inventoryCollection.findOne({ _id: ObjectId(req.params.id) }))
+        })
     } finally {
 
     }
