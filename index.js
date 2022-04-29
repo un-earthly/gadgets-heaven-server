@@ -17,6 +17,14 @@ const run = async () => {
     try {
         client.connect()
         console.log('success')
+
+        const inventoryCollection = client.db('gadgetsDB').collection('gadgets')
+        // serve all api
+        app.get('/inventory', async (req, res) => {
+            res.send(await inventoryCollection.find().toArray())
+        })
+
+        //
     } finally {
 
     }
