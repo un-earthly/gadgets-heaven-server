@@ -27,6 +27,14 @@ const run = async () => {
         app.get('/inventory/:id', async (req, res) => {
             res.send(await inventoryCollection.findOne({ _id: ObjectId(req.params.id) }))
         })
+
+        // create data api
+        app.post('/additem', async (req, res) => {
+            res.send(await inventoryCollection.insertOne(req.body))
+        })
+
+
+
     } finally {
 
     }
