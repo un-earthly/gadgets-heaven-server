@@ -33,7 +33,11 @@ const run = async () => {
             res.send(await inventoryCollection.insertOne(req.body))
         })
 
-
+        //delete data api
+        app.delete('/delete/:id', async (req, res) => {
+            const result = await inventoryCollection.deleteOne({ _id: ObjectId(req.params.id) })
+            res.send(result)
+        })
 
     } finally {
 
