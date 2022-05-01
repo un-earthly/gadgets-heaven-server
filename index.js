@@ -3,11 +3,41 @@ const cors = require('cors')
 require('dotenv').config()
 const app = express()
 const port = process.env.PORT || 80
+const jwt = require('jsonwebtoken')
 // middle Ware
 app.use(cors())
 app.use(express.json())
 
+// jwt verify
+// function verifyJWT(req, res, next) {
+//     const authHeader = req.headers.authorization
+//     if (!authHeader) {
+//         return res.status(401).send({ message: 'Un Authorized Access' })
+//     }
+//     const token = authHeader.split(' ')[1]
+//     jwt.verify(token, process.env.ACCESS_TOKEN, (err, decoded) => {
+//         if (err) {
+//             return res.status(403).send({ messege: 'forbideden' })
+//         }
+//         req.email = req.decoded
 
+//     })
+// }
+function verifyJWT(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).send({ message: 'unauthorized access' });
+    }
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN, (err, decoded) => {
+        if (err) {
+            return res.status(403).send({ message: 'Forbidden access' });
+        }
+        console.log('decoded', decoded);
+        req.decoded = decoded;
+        next();
+    })
+}
 // db
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
@@ -18,6 +48,16 @@ const run = async () => {
         client.connect()
 
         const inventoryCollection = client.db('gadgetsDB').collection('gadgets')
+
+
+
+        // auth
+        app.post('/login', async (req, res) => {
+            const secret = process.env.ACCESS_TOKEN
+            const token = jwt.sign(req.body, secret)
+            res.send({ token })
+        })
+
         // serve all api
         app.get('/inventory', async (req, res) => {
             res.send(await inventoryCollection.find().toArray())
@@ -40,8 +80,16 @@ const run = async () => {
         })
         // 
         // filter by email
-        app.get('/byemail', async (req, res) => {
-            res.send(await inventoryCollection.find({ email: req.query.email }).toArray())
+        app.get('/byemail', verifyJWT, async (req, res) => {
+            const decodedEmail = req.decoded.email;
+            const email = req.query.email;
+            if (email === decodedEmail) {
+                res.send(await inventoryCollection.find({ email: email }).toArray())
+            }
+            else {
+                res.status(403).send({ message: 'forbidden access' })
+            }
+
         })
 
         // update one
