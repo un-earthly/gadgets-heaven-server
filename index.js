@@ -9,31 +9,17 @@ app.use(cors())
 app.use(express.json())
 
 // jwt verify
-// function verifyJWT(req, res, next) {
-//     const authHeader = req.headers.authorization
-//     if (!authHeader) {
-//         return res.status(401).send({ message: 'Un Authorized Access' })
-//     }
-//     const token = authHeader.split(' ')[1]
-//     jwt.verify(token, process.env.ACCESS_TOKEN, (err, decoded) => {
-//         if (err) {
-//             return res.status(403).send({ messege: 'forbideden' })
-//         }
-//         req.email = req.decoded
 
-//     })
-// }
 function verifyJWT(req, res, next) {
     const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).send({ message: 'unauthorized access' });
-    }
+    // if (!authHeader) {
+    //     return res.status(401).send({ message: 'unauthorized access' });
+    // }
     const token = authHeader.split(' ')[1];
     jwt.verify(token, process.env.ACCESS_TOKEN, (err, decoded) => {
         if (err) {
             return res.status(403).send({ message: 'Forbidden access' });
         }
-        console.log('decoded', decoded);
         req.decoded = decoded;
         next();
     })
@@ -86,10 +72,6 @@ const run = async () => {
             if (email === decodedEmail) {
                 res.send(await inventoryCollection.find({ email: email }).toArray())
             }
-            else {
-                res.status(403).send({ message: 'forbidden access' })
-            }
-
         })
 
         // update one
@@ -119,7 +101,6 @@ const run = async () => {
             };
             const result = await inventoryCollection.updateOne(filter, updatedDoc, options);
             res.send(result);
-            // console.log(req.body)
         })
     } finally {
 
