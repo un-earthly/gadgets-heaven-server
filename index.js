@@ -12,9 +12,6 @@ app.use(express.json())
 
 function verifyJWT(req, res, next) {
     const authHeader = req.headers.authorization;
-    // if (!authHeader) {
-    //     return res.status(401).send({ message: 'unauthorized access' });
-    // }
     const token = authHeader.split(' ')[1];
     jwt.verify(token, process.env.ACCESS_TOKEN, (err, decoded) => {
         if (err) {
@@ -110,6 +107,21 @@ const run = async () => {
             const data = await inventoryCollection.findOne(query)
             let previousQuantity = parseInt(data.quantity)
             const newQuantity = previousQuantity - 1
+            const updateDoc = {
+                $set: {
+                    quantity: newQuantity
+                }
+            }
+            res.send(await inventoryCollection.updateOne(query, updateDoc, options))
+        })
+        // qunatity with form 
+        app.put('/addquanity/:id', async (req, res) => {
+            const query = { _id: ObjectId(req.params.id) }
+            const options = { upsert: true };
+            const data = await inventoryCollection.findOne(query)
+            let previousQuantity = parseInt(data.quantity)
+            console.log(req.body.quantity)
+            const newQuantity = previousQuantity + parseInt(req.body.quantity)
             const updateDoc = {
                 $set: {
                     quantity: newQuantity
