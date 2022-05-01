@@ -102,6 +102,21 @@ const run = async () => {
             const result = await inventoryCollection.updateOne(filter, updatedDoc, options);
             res.send(result);
         })
+
+        // quanity api
+        app.put('/updatequanity/:id', async (req, res) => {
+            const query = { _id: ObjectId(req.params.id) }
+            const options = { upsert: true };
+            const data = await inventoryCollection.findOne(query)
+            let previousQuantity = parseInt(data.quantity)
+            const newQuantity = previousQuantity - 1
+            const updateDoc = {
+                $set: {
+                    quantity: newQuantity
+                }
+            }
+            res.send(await inventoryCollection.updateOne(query, updateDoc, options))
+        })
     } finally {
 
     }
