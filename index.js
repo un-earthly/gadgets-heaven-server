@@ -38,7 +38,41 @@ const run = async () => {
             const result = await inventoryCollection.deleteOne({ _id: ObjectId(req.params.id) })
             res.send(result)
         })
+        // 
+        // filter by email
+        app.get('/byemail', async (req, res) => {
+            res.send(await inventoryCollection.find({ email: req.query.email }).toArray())
+        })
 
+        // update one
+        app.put('/update/:id', async (req, res) => {
+            const updateItem = req.body;
+            const filter = { _id: ObjectId(req.params.id) }
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: {
+                    title: updateItem.title,
+                    price: updateItem.price,
+                    desc: updateItem.desc,
+                    dist: updateItem.dist,
+                    supplier: updateItem.supplier,
+                    img1: updateItem.img1,
+                    img2: updateItem.img2,
+                    img3: updateItem.img3,
+                    brand: updateItem.brand,
+                    category: updateItem.category,
+                    quantity: updateItem.quantity,
+                    target: updateItem.target,
+                    sold: updateItem.sold,
+                    lastmonthsold: updateItem.lastmonthsold,
+                    ratings: updateItem.ratings,
+                    platform: updateItem.platform
+                }
+            };
+            const result = await inventoryCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
+            // console.log(req.body)
+        })
     } finally {
 
     }
