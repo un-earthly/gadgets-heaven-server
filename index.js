@@ -43,7 +43,16 @@ const run = async () => {
 
         // serve all api
         app.get('/inventory', async (req, res) => {
-            res.send(await inventoryCollection.find().toArray())
+            const activePage = parseInt(req.query.activePage)
+            const pageSize = parseInt(req.query.pageSize)
+            let items;
+            if (pageSize || activePage) {
+                items = await inventoryCollection.find().skip(pageSize * activePage).limit(pageSize).toArray()
+            }
+            else {
+                items = await inventoryCollection.find().toArray()
+            }
+            res.send(items)
         })
 
         // serve one by filtering with id
@@ -128,6 +137,13 @@ const run = async () => {
                 }
             }
             res.send(await inventoryCollection.updateOne(query, updateDoc, options))
+        })
+
+        // pagination
+
+        app.get('/pageCount', async (req, res) => {
+            const count = await inventoryCollection.estimatedDocumentCount()
+            res.send({ count })
         })
     } finally {
 
