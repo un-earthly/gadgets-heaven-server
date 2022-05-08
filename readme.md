@@ -1,1 +1,4 @@
-# live server : https://guarded-shelf-11836.herokuapp.com/
+# This is the server for [Gadgets Heaven](https://gadgets-heaven-97bc2.web.app/).Which is a warehouse management application.
+This applcation uses [Express JS](https://expressjs.com/) which is a framework for [node JS](https://expressjs.com/en/resources/middleware/cors.html).As for the database i've used [Mongo DB](https://www.mongodb.com/), Which is non sql database.
+to ensure data access i've used basic [jwt](https://jwt.io/). When a users log in with their credentials a token is given to them and based on that it verifies and provides data to the user. 
+## Live server : [Gadgets Heaven Backend](https://guarded-shelf-11836.herokuapp.com/)
