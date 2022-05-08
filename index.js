@@ -129,7 +129,6 @@ const run = async () => {
             const options = { upsert: true };
             const data = await inventoryCollection.findOne(query)
             let previousQuantity = parseInt(data.quantity)
-            console.log(req.body.quantity)
             const newQuantity = previousQuantity + parseInt(req.body.quantity)
             const updateDoc = {
                 $set: {
