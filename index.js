@@ -73,11 +73,21 @@ const run = async () => {
         // 
         // filter by email
         app.get('/byemail', verifyJWT, async (req, res) => {
+            const activePage = parseInt(req.query.activePage)
+            const pageSize = parseInt(req.query.pageSize)
             const decodedEmail = req.decoded.email;
             const email = req.query.email;
+            const query = { email }
+            let items;
+
             if (email === decodedEmail) {
-                res.send(await inventoryCollection.find({ email: email }).toArray())
+                if (pageSize || activePage) {
+                    items = await inventoryCollection.find(query).skip(pageSize * activePage).limit(pageSize).toArray()
+                }
+
             }
+
+            res.send(items)
         })
 
         // update one
@@ -144,6 +154,13 @@ const run = async () => {
             const count = await inventoryCollection.estimatedDocumentCount()
             res.send({ count })
         })
+        // pagination email
+        app.get('/pageCountEmail', async (req, res) => {
+            const query = { email: req.query.email }
+            const count = await inventoryCollection.find(query).count()
+            res.send({ count })
+        })
+
     } finally {
 
     }
