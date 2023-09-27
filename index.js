@@ -2,7 +2,7 @@ const express = require('express')
 const cors = require('cors')
 require('dotenv').config()
 const app = express()
-const port = process.env.PORT || 80
+const port = process.env.PORT || 8000
 const verifyJWT = require('./middleweres/verfiyJWT')
 const authRoutes = require('./routes/auth.route.js')
 // const userRoutes = require('./routes/user.route.js')
