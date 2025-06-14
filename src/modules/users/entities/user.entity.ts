@@ -2,6 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { Order } from '../../orders/entities/order.entity';
 import { Review } from '../../reviews/entities/review.entity';
 import { Cart } from '../../cart/entities/cart.entity';
+import { Wishlist } from '../../wishlist/entities/wishlist.entity';
 
 @Entity('users')
 export class User {
@@ -31,6 +32,9 @@ export class User {
 
     @OneToMany(() => Cart, cart => cart.user)
     carts: Cart[];
+
+    @OneToMany(() => Wishlist, wishlist => wishlist.user)
+    wishlists: Wishlist[];
 
     @Column({ type: 'jsonb', nullable: true })
     metadata: Record<string, any>;
