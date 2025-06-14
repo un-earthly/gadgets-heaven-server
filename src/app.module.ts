@@ -15,7 +15,9 @@ import { Category } from './modules/categories/entities/category.entity';
 import { Cart } from './modules/cart/entities/cart.entity';
 import { CartItem } from './modules/cart/entities/cart-item.entity';
 import { Product } from './modules/products/entities/product.entity';
+import { Payment } from './modules/payments/entities/payment.entity';
 import { CartModule } from './modules/cart/cart.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 
 @Module({
   imports: [
@@ -31,7 +33,7 @@ import { CartModule } from './modules/cart/cart.module';
         username: configService.get('DB_USERNAME'),
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
-        entities: [User, Order, Review, Category, Cart, CartItem, Product],
+        entities: [User, Order, Review, Category, Cart, CartItem, Product, Payment],
         synchronize: true,
       }),
       inject: [ConfigService],
@@ -42,6 +44,7 @@ import { CartModule } from './modules/cart/cart.module';
     OrdersModule,
     ReviewsModule,
     CartModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
