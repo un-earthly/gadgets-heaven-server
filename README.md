@@ -96,3 +96,92 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+
+
+#remaing
+
+Admin Dashboard Modules:
+Finance Module
+Installments
+Invoices
+Payouts
+Transactions
+Inventory Module
+Bulk Orders
+Stock Management
+Warehouse Management
+Notifications Module
+Email/SMS Notifications
+Ticket Management
+Orders Module
+Cancellations
+Order Tracking
+Promotions Module
+Coupons
+Flash Sales
+Referral System
+Reports Module
+Financial Reports
+Order Reports
+User Analytics
+Reviews Module
+Review Analytics
+Dispute Management
+Services Module
+Service Requests
+Service Scheduling
+Settings Module
+Access Control
+Admin Management
+System Configuration
+Privacy Settings
+Users Module
+User Activity Tracking
+Role Management
+User Dashboard Modules:
+AI Support
+Community Features
+Feedback System
+Inventory Management
+Notifications
+Booking Notifications
+Order Updates
+Price Drop Alerts
+Promotion Alerts
+Wishlist Updates
+Orders
+Bulk Orders
+Pre-orders
+Order Tracking
+Payments
+Payment History
+Installment Plans
+Subscription Management
+Recommendations
+Referrals
+Reviews
+Rewards
+Gift Cards
+Redemption
+Loyalty Tiers
+Services
+Service Modifications
+Settings
+Currency Preferences
+Language Settings
+Privacy Controls
+Profile Management
+Security Settings
+Voice Search
+Server-side Modules to Implement:
+AI Support Service
+Analytics Service
+Community Service
+Email/SMS Service
+Notification Service
+Payment Processing Service
+Recommendation Service
+Report Generation Service
+Search Service
+Voice Recognition Service
