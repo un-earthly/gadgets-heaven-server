@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Inventory, StockStatus } from './entities/inventory.entity';
-import { CreateInventoryDto } from './dto/create-inventory.dto';
-import { UpdateStockDto, StockUpdateType } from './dto/update-stock.dto';
-import { Product } from '../products/entities/product.entity';
+import { Inventory, StockStatus } from '../entities/inventory.entity';
+import { CreateInventoryDto } from '../dto/create-inventory.dto';
+import { UpdateStockDto, StockUpdateType } from '../dto/update-stock.dto';
+import { Product } from '../../products/entities/product.entity';
 
 @Injectable()
 export class InventoryService {

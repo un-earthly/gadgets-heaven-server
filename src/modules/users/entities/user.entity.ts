@@ -4,6 +4,12 @@ import { Review } from '../../reviews/entities/review.entity';
 import { Cart } from '../../cart/entities/cart.entity';
 import { Wishlist } from '../../wishlist/entities/wishlist.entity';
 
+export enum UserRole {
+    USER = 'user',
+    VENDOR = 'vendor',
+    ADMIN = 'admin'
+}
+
 @Entity('users')
 export class User {
     @PrimaryGeneratedColumn('uuid')

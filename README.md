@@ -102,10 +102,6 @@ Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
 #remaing
 
 Admin Dashboard Modules:
-Inventory Module
-Bulk Orders
-Stock Management
-Warehouse Management
 Notifications Module
 Email/SMS Notifications
 Ticket Management
