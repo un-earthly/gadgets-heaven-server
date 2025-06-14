@@ -10,8 +10,8 @@ export class Wishlist {
     id: string;
 
     @ApiProperty({ description: 'User who owns this wishlist' })
-    @ManyToOne(() => User, user => user.wishlists)
-    user: User;
+    @ManyToOne(() => User, user => user.wishlists, { lazy: true })
+    user: Promise<User>;
 
     @Column()
     userId: string;

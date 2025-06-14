@@ -33,8 +33,8 @@ export class User {
     @OneToMany(() => Cart, cart => cart.user)
     carts: Cart[];
 
-    @OneToMany(() => Wishlist, wishlist => wishlist.user)
-    wishlists: Wishlist[];
+    @OneToMany(() => Wishlist, wishlist => wishlist.user, { lazy: true })
+    wishlists: Promise<Wishlist[]>;
 
     @Column({ type: 'jsonb', nullable: true })
     metadata: Record<string, any>;

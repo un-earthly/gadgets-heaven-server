@@ -121,7 +121,9 @@ export class WishlistService {
         for (const item of items) {
             if (!item.product) continue;
 
-            const newPrice = item.product.price;
+            const product = await item.product;
+            const newPrice = product.price;
+
             if (newPrice !== item.currentPrice) {
                 item.currentPrice = newPrice;
                 item.lowestPrice = Math.min(item.lowestPrice, newPrice);
@@ -143,7 +145,7 @@ export class WishlistService {
     private shouldTriggerPriceAlert(item: WishlistItem, newPrice: number): boolean {
         switch (item.priceAlertType) {
             case PriceAlertType.FIXED:
-                return item.targetPrice && newPrice <= item.targetPrice;
+                return !!item.targetPrice && newPrice <= item.targetPrice;
             case PriceAlertType.PERCENTAGE:
                 if (!item.priceDropPercentage) return false;
                 const dropPercentage = ((item.addedPrice - newPrice) / item.addedPrice) * 100;

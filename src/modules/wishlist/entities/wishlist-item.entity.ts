@@ -17,15 +17,15 @@ export class WishlistItem {
     id: string;
 
     @ApiProperty({ description: 'Associated wishlist' })
-    @ManyToOne(() => Wishlist, wishlist => wishlist.items)
-    wishlist: Wishlist;
+    @ManyToOne(() => Wishlist, wishlist => wishlist.items, { lazy: true })
+    wishlist: Promise<Wishlist>;
 
     @Column()
     wishlistId: string;
 
     @ApiProperty({ description: 'Product in the wishlist' })
-    @ManyToOne(() => Product)
-    product: Product;
+    @ManyToOne(() => Product, { lazy: true })
+    product: Promise<Product>;
 
     @Column()
     productId: string;

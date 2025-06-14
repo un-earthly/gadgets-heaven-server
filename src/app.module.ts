@@ -21,6 +21,8 @@ import { CartModule } from './modules/cart/cart.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { WishlistModule } from './modules/wishlist/wishlist.module';
+import { Wishlist } from './modules/wishlist/entities/wishlist.entity';
+import { WishlistItem } from './modules/wishlist/entities/wishlist-item.entity';
 
 @Module({
   imports: [
@@ -36,7 +38,18 @@ import { WishlistModule } from './modules/wishlist/wishlist.module';
         username: configService.get('DB_USERNAME'),
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
-        entities: [User, Order, Review, Category, Cart, CartItem, Product, Payment],
+        entities: [
+          User,
+          Order,
+          Review,
+          Category,
+          Cart,
+          CartItem,
+          Product,
+          Payment,
+          Wishlist,
+          WishlistItem
+        ],
         synchronize: true,
       }),
       inject: [ConfigService],
@@ -55,4 +68,4 @@ import { WishlistModule } from './modules/wishlist/wishlist.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { } 
+export class AppModule { }
