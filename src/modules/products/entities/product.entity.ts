@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, ManyToMany, JoinTable } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, ManyToMany, JoinTable, OneToMany } from 'typeorm';
 import { User } from '../../auth/entities/user.entity';
+import { Review } from '../../reviews/entities/review.entity';
 
 export enum ProductStatus {
     DRAFT = 'draft',
@@ -61,6 +62,12 @@ export class Product {
 
     @ManyToOne(() => User)
     vendor: User;
+
+    @Column({ nullable: true })
+    vendorId: string;
+
+    @OneToMany(() => Review, review => review.product)
+    reviews: Review[];
 
     @CreateDateColumn()
     createdAt: Date;

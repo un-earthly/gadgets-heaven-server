@@ -1,6 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Order } from '../../orders/entities/order.entity';
+import { Review } from '../../reviews/entities/review.entity';
 
-@Entity()
+@Entity('users')
 export class User {
     @PrimaryGeneratedColumn('uuid')
     id: string;
@@ -19,6 +21,12 @@ export class User {
 
     @Column({ default: true })
     isActive: boolean;
+
+    @OneToMany(() => Order, order => order.user)
+    orders: Order[];
+
+    @OneToMany(() => Review, review => review.user)
+    reviews: Review[];
 
     @CreateDateColumn()
     createdAt: Date;
