@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
@@ -8,6 +8,14 @@ import { UsersModule } from './modules/users/users.module';
 import { ProductsModule } from './modules/products/products.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
+import { User } from './modules/users/entities/user.entity';
+import { Order } from './modules/orders/entities/order.entity';
+import { Review } from './modules/reviews/entities/review.entity';
+import { Category } from './modules/categories/entities/category.entity';
+import { Cart } from './modules/cart/entities/cart.entity';
+import { CartItem } from './modules/cart/entities/cart-item.entity';
+import { Product } from './modules/products/entities/product.entity';
+import { CartModule } from './modules/cart/cart.module';
 
 @Module({
   imports: [
@@ -18,13 +26,13 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
-        host: configService.get('DB_HOST') || 'localhost',
-        port: configService.get<number>('DB_PORT') || 5432,
-        username: configService.get('DB_USERNAME') || 'postgres',
-        password: configService.get('DB_PASSWORD') || 'postgres',
-        database: configService.get('DB_NAME') || 'gadgets_heaven',
-        autoLoadEntities: true,
-        synchronize: configService.get('NODE_ENV') === 'development',
+        host: configService.get('DB_HOST'),
+        port: configService.get('DB_PORT'),
+        username: configService.get('DB_USERNAME'),
+        password: configService.get('DB_PASSWORD'),
+        database: configService.get('DB_DATABASE'),
+        entities: [User, Order, Review, Category, Cart, CartItem, Product],
+        synchronize: true,
       }),
       inject: [ConfigService],
     }),
@@ -33,6 +41,7 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
     ProductsModule,
     OrdersModule,
     ReviewsModule,
+    CartModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -39,7 +39,7 @@ export class Cart {
     @Column('decimal', { precision: 10, scale: 2, default: 0 })
     total: number;
 
-    @Column({ nullable: true })
+    @Column({ type: 'varchar', nullable: true })
     couponCode: string | null;
 
     @Column('decimal', { precision: 10, scale: 2, default: 0 })
