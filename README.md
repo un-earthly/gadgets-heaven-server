@@ -102,11 +102,6 @@ Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
 #remaing
 
 Admin Dashboard Modules:
-Finance Module
-Installments
-Invoices
-Payouts
-Transactions
 Inventory Module
 Bulk Orders
 Stock Management
