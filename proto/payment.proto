@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package payment;
+
+service PaymentService {
+  rpc ProcessPayment (ProcessPaymentRequest) returns (ProcessPaymentResponse);
+  rpc GetPayment (GetPaymentRequest) returns (GetPaymentResponse);
+  rpc RefundPayment (RefundPaymentRequest) returns (RefundPaymentResponse);
+  rpc ListPayments (ListPaymentsRequest) returns (ListPaymentsResponse);
+}
+
+message ProcessPaymentRequest {
+  string order_id = 1;
+  string user_id = 2;
+  double amount = 3;
+  PaymentMethod payment_method = 4;
+  PaymentDetails payment_details = 5;
+}
+
+message ProcessPaymentResponse {
+  Payment payment = 1;
+}
+
+message GetPaymentRequest {
+  string payment_id = 1;
+}
+
+message GetPaymentResponse {
+  Payment payment = 1;
+}
+
+message RefundPaymentRequest {
+  string payment_id = 1;
+  double amount = 2;
+  string reason = 3;
+}
+
+message RefundPaymentResponse {
+  Payment payment = 1;
+}
+
+message ListPaymentsRequest {
+  string user_id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message ListPaymentsResponse {
+  repeated Payment payments = 1;
+  int32 total = 2;
+}
+
+message Payment {
+  string payment_id = 1;
+  string order_id = 2;
+  string user_id = 3;
+  double amount = 4;
+  PaymentStatus status = 5;
+  PaymentMethod payment_method = 6;
+  string transaction_id = 7;
+  int64 created_at = 8;
+  int64 updated_at = 9;
+}
+
+message PaymentDetails {
+  string card_number = 1;
+  string card_holder = 2;
+  string expiry_date = 3;
+  string cvv = 4;
+}
+
+enum PaymentStatus {
+  PENDING = 0;
+  PROCESSING = 1;
+  COMPLETED = 2;
+  FAILED = 3;
+  REFUNDED = 4;
+}
+
+enum PaymentMethod {
+  CREDIT_CARD = 0;
+  DEBIT_CARD = 1;
+  PAYPAL = 2;
+  BANK_TRANSFER = 3;
+}

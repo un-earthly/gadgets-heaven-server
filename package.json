@@ -1,0 +1,14 @@
+{
+    "name": "grpc-ecommerce-microservices",
+    "version": "1.0.0",
+    "description": "gRPC-based e-commerce microservices platform",
+    "private": true,
+    "scripts": {
+        "install:all": "npm install && cd services/api-gateway && npm install && cd ../auth && npm install && cd ../user && npm install && cd ../product && npm install && cd ../order && npm install && cd ../payment && npm install",
+        "update": "npm update && cd services/api-gateway && npm update && cd ../auth && npm update && cd ../user && npm update && cd ../product && npm update && cd ../order && npm update && cd ../payment && npm update",
+        "proto:generate": "cd services/api-gateway && npm run proto:generate && cd ../auth && npm run proto:generate && cd ../user && npm run proto:generate && cd ../product && npm run proto:generate && cd ../order && npm run proto:generate && cd ../payment && npm run proto:generate"
+    },
+    "devDependencies": {
+        "ts-proto": "^1.156.0"
+    }
+}

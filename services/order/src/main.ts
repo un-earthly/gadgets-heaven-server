@@ -9,15 +9,15 @@ async function bootstrap() {
         {
             transport: Transport.GRPC,
             options: {
-                package: 'user',
-                protoPath: '/proto/user.proto',
-                url: `0.0.0.0:${process.env.GRPC_PORT || 50052}`,
+                package: 'order',
+                protoPath: '/proto/order.proto',
+                url: `0.0.0.0:${process.env.GRPC_PORT || 50054}`,
             },
         },
     );
 
     await app.listen();
-    console.log(`User Service is listening on port ${process.env.GRPC_PORT || 50052}`);
+    console.log(`Order Service is listening on port ${process.env.GRPC_PORT || 50054}`);
 }
 
 bootstrap();

@@ -1,0 +1,283 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Databases
+  postgres-auth:
+    image: postgres:15
+    container_name: postgres-auth
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: auth_user
+      POSTGRES_PASSWORD: auth_pass
+    volumes:
+      - postgres-auth-data:/var/lib/postgresql/data
+      - ./init-scripts/auth:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U auth_user -d auth_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices-network
+
+  postgres-user:
+    image: postgres:15
+    container_name: postgres-user
+    environment:
+      POSTGRES_DB: user_db
+      POSTGRES_USER: user_user
+      POSTGRES_PASSWORD: user_pass
+    volumes:
+      - postgres-user-data:/var/lib/postgresql/data
+      - ./init-scripts/user:/docker-entrypoint-initdb.d
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user_user -d user_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices-network
+
+  postgres-product:
+    image: postgres:15
+    container_name: postgres-product
+    environment:
+      POSTGRES_DB: product_db
+      POSTGRES_USER: product_user
+      POSTGRES_PASSWORD: product_pass
+    volumes:
+      - postgres-product-data:/var/lib/postgresql/data
+      - ./init-scripts/product:/docker-entrypoint-initdb.d
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U product_user -d product_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices-network
+
+  postgres-order:
+    image: postgres:15
+    container_name: postgres-order
+    environment:
+      POSTGRES_DB: order_db
+      POSTGRES_USER: order_user
+      POSTGRES_PASSWORD: order_pass
+    volumes:
+      - postgres-order-data:/var/lib/postgresql/data
+      - ./init-scripts/order:/docker-entrypoint-initdb.d
+    ports:
+      - "5435:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U order_user -d order_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices-network
+
+  postgres-payment:
+    image: postgres:15
+    container_name: postgres-payment
+    environment:
+      POSTGRES_DB: payment_db
+      POSTGRES_USER: payment_user
+      POSTGRES_PASSWORD: payment_pass
+    volumes:
+      - postgres-payment-data:/var/lib/postgresql/data
+      - ./init-scripts/payment:/docker-entrypoint-initdb.d
+    ports:
+      - "5436:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payment_user -d payment_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices-network
+
+  # Auth Service
+  auth-service:
+    build:
+      context: .
+      dockerfile: ./services/auth/Dockerfile
+    container_name: auth-service
+    environment:
+      - GRPC_PORT=50051
+      - DATABASE_HOST=postgres-auth
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=auth_db
+      - DATABASE_USER=auth_user
+      - DATABASE_PASSWORD=auth_pass
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=your-secret-key-change-in-production
+      - JWT_EXPIRES_IN=3600
+      - REFRESH_TOKEN_EXPIRES_IN=604800
+    ports:
+      - "50051:50051"
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # User Service
+  user-service:
+    build:
+      context: .
+      dockerfile: ./services/user/Dockerfile
+    container_name: user-service
+    environment:
+      - GRPC_PORT=50052
+      - DATABASE_HOST=postgres-user
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=user_db
+      - DATABASE_USER=user_user
+      - DATABASE_PASSWORD=user_pass
+    ports:
+      - "50052:50052"
+    depends_on:
+      postgres-user:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # Product Service
+  product-service:
+    build:
+      context: .
+      dockerfile: ./services/product/Dockerfile
+    container_name: product-service
+    environment:
+      - GRPC_PORT=50053
+      - DATABASE_HOST=postgres-product
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=product_db
+      - DATABASE_USER=product_user
+      - DATABASE_PASSWORD=product_pass
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    ports:
+      - "50053:50053"
+    depends_on:
+      postgres-product:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # Order Service
+  order-service:
+    build:
+      context: .
+      dockerfile: ./services/order/Dockerfile
+    container_name: order-service
+    environment:
+      - GRPC_PORT=50054
+      - DATABASE_HOST=postgres-order
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=order_db
+      - DATABASE_USER=order_user
+      - DATABASE_PASSWORD=order_pass
+      - PRODUCT_SERVICE_URL=product-service:50053
+    ports:
+      - "50054:50054"
+    depends_on:
+      postgres-order:
+        condition: service_healthy
+      product-service:
+        condition: service_started
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # Payment Service
+  payment-service:
+    build:
+      context: .
+      dockerfile: ./services/payment/Dockerfile
+    container_name: payment-service
+    environment:
+      - GRPC_PORT=50055
+      - DATABASE_HOST=postgres-payment
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=payment_db
+      - DATABASE_USER=payment_user
+      - DATABASE_PASSWORD=payment_pass
+      - ORDER_SERVICE_URL=order-service:50054
+    ports:
+      - "50055:50055"
+    depends_on:
+      postgres-payment:
+        condition: service_healthy
+      order-service:
+        condition: service_started
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: .
+      dockerfile: ./services/api-gateway/Dockerfile
+    container_name: api-gateway
+    environment:
+      - HTTP_PORT=3000
+      - AUTH_SERVICE_URL=auth-service:50051
+      - USER_SERVICE_URL=user-service:50052
+      - PRODUCT_SERVICE_URL=product-service:50053
+      - ORDER_SERVICE_URL=order-service:50054
+      - PAYMENT_SERVICE_URL=payment-service:50055
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth-service
+      - user-service
+      - product-service
+      - order-service
+      - payment-service
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+networks:
+  microservices-network:
+    driver: bridge
+
+volumes:
+  postgres-auth-data:
+  postgres-user-data:
+  postgres-product-data:
+  postgres-order-data:
+  postgres-payment-data:
+  redis-data:

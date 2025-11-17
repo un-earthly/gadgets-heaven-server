@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { UserProfile } from '../entities/user-profile.entity';
+import { PaymentEntity } from '../entities/payment.entity';
+import { RefundEntity } from '../entities/refund.entity';
 
 @Module({
     imports: [
@@ -14,14 +15,11 @@ import { UserProfile } from '../entities/user-profile.entity';
                 username: configService.get('database.username'),
                 password: configService.get('database.password'),
                 database: configService.get('database.database'),
-                entities: [UserProfile],
+                entities: [PaymentEntity, RefundEntity],
                 synchronize: true, // Set to false in production
-                logging: false,
             }),
             inject: [ConfigService],
         }),
-        TypeOrmModule.forFeature([UserProfile]),
     ],
-    exports: [TypeOrmModule],
 })
 export class DatabaseModule { }
