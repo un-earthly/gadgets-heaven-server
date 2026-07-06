@@ -45,24 +45,33 @@ export class TenantsService implements OnModuleInit {
 
     async seedDefaultTenantAndMigrate() {
         try {
-            // Check if default tenant exists
-            let defaultTenant = await this.tenantRepository.findOne({ where: { id: DEFAULT_TENANT_ID } });
+            // Check if default tenant exists by slug
+            let defaultTenant = await this.tenantRepository.findOne({ where: { slug: 'gadgets-heaven' } });
             if (!defaultTenant) {
-                // Check by slug in case ID is different
-                defaultTenant = await this.tenantRepository.findOne({ where: { slug: 'gadgets-heaven' } });
-                if (!defaultTenant) {
-                    this.logger.log('Seeding default tenant: Gadgets Heaven');
-                    defaultTenant = this.tenantRepository.create({
-                        id: DEFAULT_TENANT_ID,
-                        name: 'Gadgets Heaven',
-                        slug: 'gadgets-heaven',
-                        status: TenantStatus.ACTIVE,
-                        activePaymentMethods: ['cod', 'sslcommerz'],
-                        activeCourier: 'steadfast',
-                        footerText: '© Gadgets Heaven. All rights reserved.',
-                    });
-                    await this.tenantRepository.save(defaultTenant);
-                }
+                this.logger.log('Seeding default tenant: Gadgets Heaven');
+                defaultTenant = this.tenantRepository.create({
+                    id: DEFAULT_TENANT_ID,
+                    name: 'Gadgets Heaven',
+                    slug: 'gadgets-heaven',
+                    status: TenantStatus.ACTIVE,
+                    activePaymentMethods: ['cod', 'sslcommerz'],
+                    activeCourier: 'steadfast',
+                    footerText: '© Gadgets Heaven. All rights reserved.',
+                    logoUrl: '/logo-text-dark.png',
+                    themePrimaryColor: '#ea580c',
+                    themeSecondaryColor: '#ffedd5',
+                    contactPhone: '+8801700000000',
+                    contactEmail: 'support@gadgetsheaven.com',
+                });
+                await this.tenantRepository.save(defaultTenant);
+            } else {
+                this.logger.log('Updating default tenant branding fields');
+                defaultTenant.logoUrl = '/logo-text-dark.png';
+                defaultTenant.themePrimaryColor = '#ea580c';
+                defaultTenant.themeSecondaryColor = '#ffedd5';
+                defaultTenant.contactPhone = '+8801700000000';
+                defaultTenant.contactEmail = 'support@gadgetsheaven.com';
+                await this.tenantRepository.save(defaultTenant);
             }
 
             // Seed default admin user for Tenant A
@@ -70,7 +79,7 @@ export class TenantsService implements OnModuleInit {
             if (!defaultAdmin) {
                 this.logger.log('Seeding default admin user for Tenant A');
                 defaultAdmin = this.userRepository.create({
-                    tenantId: DEFAULT_TENANT_ID,
+                    tenantId: defaultTenant.id,
                     email: 'admin@gadgetsheaven.com',
                     password: 'password123',
                     firstName: 'Gadgets',
@@ -84,56 +93,66 @@ export class TenantsService implements OnModuleInit {
             const targetTenantId = defaultTenant.id;
 
             // Seed second tenant for isolation proof
-            let secondTenant = await this.tenantRepository.findOne({ where: { id: SECOND_TENANT_ID } });
+            let secondTenant = await this.tenantRepository.findOne({ where: { slug: 'jersey-mania' } });
             if (!secondTenant) {
-                secondTenant = await this.tenantRepository.findOne({ where: { slug: 'jersey-mania' } });
-                if (!secondTenant) {
-                    this.logger.log('Seeding second tenant: Jersey Mania');
-                    secondTenant = this.tenantRepository.create({
-                        id: SECOND_TENANT_ID,
-                        name: 'Jersey Mania',
-                        slug: 'jersey-mania',
-                        status: TenantStatus.ACTIVE,
-                        activePaymentMethods: ['cod'],
-                        activeCourier: 'steadfast',
-                        footerText: '© Jersey Mania. All rights reserved.',
-                    });
-                    await this.tenantRepository.save(secondTenant);
+                this.logger.log('Seeding second tenant: Jersey Mania');
+                secondTenant = this.tenantRepository.create({
+                    id: SECOND_TENANT_ID,
+                    name: 'Jersey Mania',
+                    slug: 'jersey-mania',
+                    status: TenantStatus.ACTIVE,
+                    activePaymentMethods: ['cod'],
+                    activeCourier: 'steadfast',
+                    footerText: '© Jersey Mania. All rights reserved.',
+                    logoUrl: '/logo-beige.png',
+                    themePrimaryColor: '#059669',
+                    themeSecondaryColor: '#d1fae5',
+                    contactPhone: '+8801900000000',
+                    contactEmail: 'info@jerseymania.com',
+                });
+                await this.tenantRepository.save(secondTenant);
 
-                    // Seed category for second tenant
-                    const category = this.categoryRepository.create({
-                        tenantId: SECOND_TENANT_ID,
-                        name: 'Jerseys',
-                        slug: 'jerseys',
-                        description: 'Quality sports jerseys',
-                    });
-                    await this.categoryRepository.save(category);
+                // Seed category for second tenant
+                const category = this.categoryRepository.create({
+                    tenantId: secondTenant.id,
+                    name: 'Jerseys',
+                    slug: 'jerseys',
+                    description: 'Quality sports jerseys',
+                });
+                await this.categoryRepository.save(category);
 
-                    // Seed product for second tenant
-                    const product = this.productRepository.create({
-                        tenantId: SECOND_TENANT_ID,
-                        name: 'Bangladesh Cricket Jersey',
-                        description: 'Official replica cricket jersey',
-                        price: 1200,
-                        stockQuantity: 50,
-                        sku: 'BD-CRIC-01',
-                        categories: ['sports', 'jerseys'],
-                        status: ProductStatus.PUBLISHED,
-                    });
-                    await this.productRepository.save(product);
+                // Seed product for second tenant
+                const product = this.productRepository.create({
+                    tenantId: secondTenant.id,
+                    name: 'Bangladesh Cricket Jersey',
+                    description: 'Official replica cricket jersey',
+                    price: 1200,
+                    stockQuantity: 50,
+                    sku: 'BD-CRIC-01',
+                    categories: ['sports', 'jerseys'],
+                    status: ProductStatus.PUBLISHED,
+                });
+                await this.productRepository.save(product);
 
-                    // Seed user for second tenant
-                    const user = this.userRepository.create({
-                        tenantId: SECOND_TENANT_ID,
-                        email: 'vendor@jerseymania.com',
-                        password: 'password123',
-                        firstName: 'Jersey',
-                        lastName: 'Vendor',
-                        role: UserRole.VENDOR,
-                        isActive: true,
-                    });
-                    await this.userRepository.save(user);
-                }
+                // Seed user for second tenant
+                const user = this.userRepository.create({
+                    tenantId: secondTenant.id,
+                    email: 'vendor@jerseymania.com',
+                    password: 'password123',
+                    firstName: 'Jersey',
+                    lastName: 'Vendor',
+                    role: UserRole.VENDOR,
+                    isActive: true,
+                });
+                await this.userRepository.save(user);
+            } else {
+                this.logger.log('Updating second tenant branding fields');
+                secondTenant.logoUrl = '/logo-beige.png';
+                secondTenant.themePrimaryColor = '#059669';
+                secondTenant.themeSecondaryColor = '#d1fae5';
+                secondTenant.contactPhone = '+8801900000000';
+                secondTenant.contactEmail = 'info@jerseymania.com';
+                await this.tenantRepository.save(secondTenant);
             }
 
             // Migrate existing data where tenantId is null

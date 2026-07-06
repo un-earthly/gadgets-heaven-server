@@ -162,4 +162,48 @@ describe('Tenants Integration Proof (Real DB)', () => {
             .set('Authorization', `Bearer ${tokenB}`)
             .expect(200);
     });
+
+    it('should retrieve correct public branding config per tenant context without auth', async () => {
+        // Test Gadgets Heaven branding
+        const resA = await request(app.getHttpServer())
+            .get('/tenants/branding')
+            .set('x-tenant-slug', 'gadgets-heaven')
+            .expect(200);
+        expect(resA.body.name).toBe('Gadgets Heaven');
+        expect(resA.body.themePrimaryColor).toBe('#ea580c');
+        expect(resA.body.contactPhone).toBe('+8801700000000');
+
+        // Test Jersey Mania branding
+        const resB = await request(app.getHttpServer())
+            .get('/tenants/branding')
+            .set('x-tenant-slug', 'jersey-mania')
+            .expect(200);
+        expect(resB.body.name).toBe('Jersey Mania');
+        expect(resB.body.themePrimaryColor).toBe('#059669');
+        expect(resB.body.contactPhone).toBe('+8801900000000');
+    });
+
+    it('should isolate public products and categories per resolved tenant', async () => {
+        // Fetch categories for Jersey Mania
+        const categoriesRes = await request(app.getHttpServer())
+            .get('/categories')
+            .set('x-tenant-slug', 'jersey-mania')
+            .expect(200);
+        
+        // Assert only Jersey Mania category is returned
+        expect(categoriesRes.body).toBeInstanceOf(Array);
+        expect(categoriesRes.body.length).toBe(1);
+        expect(categoriesRes.body[0].slug).toBe('jerseys');
+
+        // Fetch products for Jersey Mania
+        const productsRes = await request(app.getHttpServer())
+            .get('/products')
+            .set('x-tenant-slug', 'jersey-mania')
+            .expect(200);
+        
+        // Assert only Jersey Mania product is returned
+        expect(productsRes.body.items).toBeInstanceOf(Array);
+        expect(productsRes.body.items.length).toBe(1);
+        expect(productsRes.body.items[0].sku).toBe('BD-CRIC-01');
+    });
 });
