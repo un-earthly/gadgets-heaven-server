@@ -1,73 +1,88 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Product } from '../../products/entities/product.entity';
+import { Tenant } from '../../tenants/entities/tenant.entity';
 
 export enum OrderStatus {
-    PENDING = 'pending',
-    CONFIRMED = 'confirmed',
-    PROCESSING = 'processing',
-    SHIPPED = 'shipped',
-    DELIVERED = 'delivered',
-    CANCELLED = 'cancelled',
-    REFUNDED = 'refunded'
+  PENDING = 'pending',
+  CONFIRMED = 'confirmed',
+  PROCESSING = 'processing',
+  SHIPPED = 'shipped',
+  DELIVERED = 'delivered',
+  CANCELLED = 'cancelled',
+  REFUNDED = 'refunded',
 }
 
 @Entity('orders')
 export class Order {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @ManyToOne(() => User, user => user.orders)
-    user: User;
+  @Column()
+  tenantId: string;
 
-    @Column()
-    userId: string;
+  @ManyToOne(() => Tenant)
+  tenant: Tenant;
 
-    @Column({
-        type: 'enum',
-        enum: OrderStatus,
-        default: OrderStatus.PENDING
-    })
-    status: OrderStatus;
+  @ManyToOne(() => User, (user) => user.orders)
+  user: User;
 
-    @Column('decimal', { precision: 10, scale: 2 })
-    totalAmount: number;
+  @Column()
+  userId: string;
 
-    @Column({ nullable: true })
-    shippingAddress: string;
+  @Column({
+    type: 'enum',
+    enum: OrderStatus,
+    default: OrderStatus.PENDING,
+  })
+  status: OrderStatus;
 
-    @Column({ nullable: true })
-    billingAddress: string;
+  @Column('decimal', { precision: 10, scale: 2 })
+  totalAmount: number;
 
-    @Column({ nullable: true })
-    trackingNumber: string;
+  @Column({ nullable: true })
+  shippingAddress: string;
 
-    @Column({ type: 'jsonb', nullable: true })
-    metadata: Record<string, any>;
+  @Column({ nullable: true })
+  billingAddress: string;
 
-    @Column({ default: false })
-    isPaid: boolean;
+  @Column({ nullable: true })
+  trackingNumber: string;
 
-    @Column({ nullable: true })
-    paymentMethod: string;
+  @Column({ type: 'jsonb', nullable: true })
+  metadata: Record<string, any>;
 
-    @Column({ nullable: true })
-    paymentId: string;
+  @Column({ default: false })
+  isPaid: boolean;
 
-    @Column({ type: 'jsonb' })
-    items: OrderItem[];
+  @Column({ nullable: true })
+  paymentMethod: string;
 
-    @CreateDateColumn()
-    createdAt: Date;
+  @Column({ nullable: true })
+  paymentId: string;
 
-    @UpdateDateColumn()
-    updatedAt: Date;
+  @Column({ type: 'jsonb' })
+  items: OrderItem[];
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }
 
 export interface OrderItem {
-    productId: string;
-    quantity: number;
-    price: number;
-    name: string;
-    subtotal: number;
-} 
+  productId: string;
+  quantity: number;
+  price: number;
+  name: string;
+  subtotal: number;
+}

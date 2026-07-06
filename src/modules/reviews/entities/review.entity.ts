@@ -1,61 +1,75 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Product } from '../../products/entities/product.entity';
+import { Tenant } from '../../tenants/entities/tenant.entity';
 
 export enum ReviewStatus {
-    PENDING = 'pending',
-    APPROVED = 'approved',
-    REJECTED = 'rejected'
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
 }
 
 @Entity('reviews')
 export class Review {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @ManyToOne(() => User, user => user.reviews)
-    user: User;
+  @Column()
+  tenantId: string;
 
-    @Column()
-    userId: string;
+  @ManyToOne(() => Tenant)
+  tenant: Tenant;
 
-    @ManyToOne(() => Product, product => product.reviews)
-    product: Product;
+  @ManyToOne(() => User, (user) => user.reviews)
+  user: User;
 
-    @Column()
-    productId: string;
+  @Column()
+  userId: string;
 
-    @Column()
-    title: string;
+  @ManyToOne(() => Product, (product) => product.reviews)
+  product: Product;
 
-    @Column('text')
-    content: string;
+  @Column()
+  productId: string;
 
-    @Column()
-    rating: number;
+  @Column()
+  title: string;
 
-    @Column({ type: 'jsonb', nullable: true })
-    images: string[];
+  @Column('text')
+  content: string;
 
-    @Column({
-        type: 'enum',
-        enum: ReviewStatus,
-        default: ReviewStatus.PENDING
-    })
-    status: ReviewStatus;
+  @Column()
+  rating: number;
 
-    @Column({ default: false })
-    isVerifiedPurchase: boolean;
+  @Column({ type: 'jsonb', nullable: true })
+  images: string[];
 
-    @Column({ type: 'int', default: 0 })
-    helpfulVotes: number;
+  @Column({
+    type: 'enum',
+    enum: ReviewStatus,
+    default: ReviewStatus.PENDING,
+  })
+  status: ReviewStatus;
 
-    @Column({ type: 'jsonb', nullable: true })
-    metadata: Record<string, any>;
+  @Column({ default: false })
+  isVerifiedPurchase: boolean;
 
-    @CreateDateColumn()
-    createdAt: Date;
+  @Column({ type: 'int', default: 0 })
+  helpfulVotes: number;
 
-    @UpdateDateColumn()
-    updatedAt: Date;
-} 
+  @Column({ type: 'jsonb', nullable: true })
+  metadata: Record<string, any>;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+}

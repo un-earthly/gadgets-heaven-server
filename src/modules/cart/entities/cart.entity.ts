@@ -1,65 +1,80 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { CartItem } from './cart-item.entity';
+import { Tenant } from '../../tenants/entities/tenant.entity';
 
 export enum CartStatus {
-    ACTIVE = 'active',
-    CHECKOUT = 'checkout',
-    ABANDONED = 'abandoned',
-    COMPLETED = 'completed'
+  ACTIVE = 'active',
+  CHECKOUT = 'checkout',
+  ABANDONED = 'abandoned',
+  COMPLETED = 'completed',
 }
 
 @Entity('carts')
 export class Cart {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @ManyToOne(() => User, user => user.carts)
-    user: User;
+  @Column()
+  tenantId: string;
 
-    @Column()
-    userId: string;
+  @ManyToOne(() => Tenant)
+  tenant: Tenant;
 
-    @OneToMany(() => CartItem, cartItem => cartItem.cart, { cascade: true })
-    items: CartItem[];
+  @ManyToOne(() => User, (user) => user.carts)
+  user: User;
 
-    @Column({
-        type: 'enum',
-        enum: CartStatus,
-        default: CartStatus.ACTIVE
-    })
-    status: CartStatus;
+  @Column()
+  userId: string;
 
-    @Column('decimal', { precision: 10, scale: 2, default: 0 })
-    subtotal: number;
+  @OneToMany(() => CartItem, (cartItem) => cartItem.cart, { cascade: true })
+  items: CartItem[];
 
-    @Column('decimal', { precision: 10, scale: 2, default: 0 })
-    tax: number;
+  @Column({
+    type: 'enum',
+    enum: CartStatus,
+    default: CartStatus.ACTIVE,
+  })
+  status: CartStatus;
 
-    @Column('decimal', { precision: 10, scale: 2, default: 0 })
-    total: number;
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  subtotal: number;
 
-    @Column({ type: 'varchar', nullable: true })
-    couponCode: string | null;
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  tax: number;
 
-    @Column('decimal', { precision: 10, scale: 2, default: 0 })
-    discount: number;
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  total: number;
 
-    @Column({ type: 'jsonb', nullable: true })
-    metadata: Record<string, any>;
+  @Column({ type: 'varchar', nullable: true })
+  couponCode: string | null;
 
-    @Column({ default: false })
-    isGuestCart: boolean;
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  discount: number;
 
-    @Column({ nullable: true })
-    guestEmail: string;
+  @Column({ type: 'jsonb', nullable: true })
+  metadata: Record<string, any>;
 
-    @CreateDateColumn()
-    createdAt: Date;
+  @Column({ default: false })
+  isGuestCart: boolean;
 
-    @UpdateDateColumn()
-    updatedAt: Date;
+  @Column({ nullable: true })
+  guestEmail: string;
 
-    @Column({ nullable: true })
-    lastActivityAt: Date;
-} 
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  @Column({ nullable: true })
+  lastActivityAt: Date;
+}

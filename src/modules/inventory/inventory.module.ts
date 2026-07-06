@@ -9,11 +9,9 @@ import { BulkOrderService } from './services/bulk-order.service';
 import { BulkOrderController } from './controllers/bulk-order.controller';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([Inventory, Product, BulkOrder]),
-    ],
-    controllers: [InventoryController, BulkOrderController],
-    providers: [InventoryService, BulkOrderService],
-    exports: [InventoryService, BulkOrderService],
+  imports: [TypeOrmModule.forFeature([Inventory, Product, BulkOrder])],
+  controllers: [InventoryController, BulkOrderController],
+  providers: [InventoryService, BulkOrderService],
+  exports: [InventoryService, BulkOrderService],
 })
-export class InventoryModule { } 
+export class InventoryModule {}

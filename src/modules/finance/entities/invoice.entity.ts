@@ -1,82 +1,98 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Unique,
+} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Order } from '../../orders/entities/order.entity';
+import { Tenant } from '../../tenants/entities/tenant.entity';
 
 export enum InvoiceStatus {
-    DRAFT = 'draft',
-    SENT = 'sent',
-    PAID = 'paid',
-    OVERDUE = 'overdue',
-    CANCELLED = 'cancelled'
+  DRAFT = 'draft',
+  SENT = 'sent',
+  PAID = 'paid',
+  OVERDUE = 'overdue',
+  CANCELLED = 'cancelled',
 }
 
 export interface InvoiceItem {
-    productId: string;
-    name: string;
-    quantity: number;
-    unitPrice: number;
-    subtotal: number;
-    tax: number;
-    total: number;
+  productId: string;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+  tax: number;
+  total: number;
 }
 
 @Entity('invoices')
+@Unique(['tenantId', 'invoiceNumber'])
 export class Invoice {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column({ unique: true })
-    invoiceNumber: string;
+  @Column()
+  tenantId: string;
 
-    @Column('decimal', { precision: 10, scale: 2 })
-    subtotal: number;
+  @ManyToOne(() => Tenant)
+  tenant: Tenant;
 
-    @Column('decimal', { precision: 10, scale: 2 })
-    tax: number;
+  @Column()
+  invoiceNumber: string;
 
-    @Column('decimal', { precision: 10, scale: 2 })
-    total: number;
+  @Column('decimal', { precision: 10, scale: 2 })
+  subtotal: number;
 
-    @Column({
-        type: 'enum',
-        enum: InvoiceStatus,
-        default: InvoiceStatus.DRAFT
-    })
-    status: InvoiceStatus;
+  @Column('decimal', { precision: 10, scale: 2 })
+  tax: number;
 
-    @ManyToOne(() => User, { eager: true })
-    user: User;
+  @Column('decimal', { precision: 10, scale: 2 })
+  total: number;
 
-    @Column()
-    userId: string;
+  @Column({
+    type: 'enum',
+    enum: InvoiceStatus,
+    default: InvoiceStatus.DRAFT,
+  })
+  status: InvoiceStatus;
 
-    @ManyToOne(() => Order, { nullable: true, eager: true })
-    order: Order;
+  @ManyToOne(() => User, { eager: true })
+  user: User;
 
-    @Column({ nullable: true })
-    orderId: string;
+  @Column()
+  userId: string;
 
-    @Column({ type: 'date' })
-    dueDate: Date;
+  @ManyToOne(() => Order, { nullable: true, eager: true })
+  order: Order;
 
-    @Column({ type: 'date', nullable: true })
-    paidDate: Date;
+  @Column({ nullable: true })
+  orderId: string;
 
-    @Column({ type: 'jsonb' })
-    items: InvoiceItem[];
+  @Column({ type: 'date' })
+  dueDate: Date;
 
-    @Column({ type: 'text', nullable: true })
-    notes: string;
+  @Column({ type: 'date', nullable: true })
+  paidDate: Date;
 
-    @Column({ type: 'jsonb', nullable: true })
-    metadata: Record<string, any>;
+  @Column({ type: 'jsonb' })
+  items: InvoiceItem[];
 
-    @Column({ nullable: true })
-    paymentTerms: string;
+  @Column({ type: 'text', nullable: true })
+  notes: string;
 
-    @CreateDateColumn()
-    createdAt: Date;
+  @Column({ type: 'jsonb', nullable: true })
+  metadata: Record<string, any>;
 
-    @UpdateDateColumn()
-    updatedAt: Date;
-} 
+  @Column({ nullable: true })
+  paymentTerms: string;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+}

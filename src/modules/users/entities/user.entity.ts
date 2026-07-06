@@ -1,24 +1,36 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToOne, Unique, BeforeInsert, BeforeUpdate } from 'typeorm';
 import { Order } from '../../orders/entities/order.entity';
 import { Review } from '../../reviews/entities/review.entity';
 import { Cart } from '../../cart/entities/cart.entity';
 import { Wishlist } from '../../wishlist/entities/wishlist.entity';
+import { Tenant } from '../../tenants/entities/tenant.entity';
+import { Exclude } from 'class-transformer';
+import * as bcrypt from 'bcrypt';
 
 export enum UserRole {
-    USER = 'user',
+    ADMIN = 'admin',
     VENDOR = 'vendor',
-    ADMIN = 'admin'
+    CUSTOMER = 'customer',
+    USER = 'user'
 }
 
 @Entity('users')
+@Unique(['tenantId', 'email'])
 export class User {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ unique: true })
+    @Column()
+    tenantId: string;
+
+    @ManyToOne(() => Tenant)
+    tenant: Tenant;
+
+    @Column()
     email: string;
 
     @Column()
+    @Exclude()
     password: string;
 
     @Column()
@@ -27,8 +39,24 @@ export class User {
     @Column()
     lastName: string;
 
+    @Column({
+        type: 'enum',
+        enum: UserRole,
+        default: UserRole.CUSTOMER
+    })
+    role: UserRole;
+
     @Column({ default: false })
     isAdmin: boolean;
+
+    @Column({ default: true })
+    isActive: boolean;
+
+    @Column({ default: false })
+    isEmailVerified: boolean;
+
+    @Column({ nullable: true })
+    phoneNumber: string;
 
     @OneToMany(() => Order, order => order.user)
     orders: Order[];
@@ -50,4 +78,21 @@ export class User {
 
     @UpdateDateColumn()
     updatedAt: Date;
-} 
+
+    @BeforeInsert()
+    @BeforeUpdate()
+    async handleBeforeSave() {
+        // Sync isAdmin flag with role
+        this.isAdmin = this.role === UserRole.ADMIN;
+
+        // Hash password if provided and not already hashed
+        if (this.password && !this.password.startsWith('$2')) {
+            const salt = await bcrypt.genSalt();
+            this.password = await bcrypt.hash(this.password, salt);
+        }
+    }
+
+    async validatePassword(password: string): Promise<boolean> {
+        return bcrypt.compare(password, this.password);
+    }
+}

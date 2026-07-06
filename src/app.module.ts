@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
@@ -23,6 +23,18 @@ import { InventoryModule } from './modules/inventory/inventory.module';
 import { WishlistModule } from './modules/wishlist/wishlist.module';
 import { Wishlist } from './modules/wishlist/entities/wishlist.entity';
 import { WishlistItem } from './modules/wishlist/entities/wishlist-item.entity';
+import { Tenant } from './modules/tenants/entities/tenant.entity';
+import { TenantsModule } from './modules/tenants/tenants.module';
+import { TenantMiddleware } from './modules/tenants/middleware/tenant.middleware';
+import { APP_GUARD } from '@nestjs/core';
+import { AdminTenantGuard } from './modules/auth/guards/admin-tenant.guard';
+import { Inventory } from './modules/inventory/entities/inventory.entity';
+import { BulkOrder } from './modules/inventory/entities/bulk-order.entity';
+import { FinanceModule } from './modules/finance/finance.module';
+import { Transaction } from './modules/finance/entities/transaction.entity';
+import { Invoice } from './modules/finance/entities/invoice.entity';
+import { Payout } from './modules/finance/entities/payout.entity';
+import { Installment } from './modules/finance/entities/installment.entity';
 
 @Module({
   imports: [
@@ -39,6 +51,7 @@ import { WishlistItem } from './modules/wishlist/entities/wishlist-item.entity';
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
         entities: [
+          Tenant,
           User,
           Order,
           Review,
@@ -48,12 +61,19 @@ import { WishlistItem } from './modules/wishlist/entities/wishlist-item.entity';
           Product,
           Payment,
           Wishlist,
-          WishlistItem
+          WishlistItem,
+          Inventory,
+          BulkOrder,
+          Transaction,
+          Invoice,
+          Payout,
+          Installment
         ],
         synchronize: true,
       }),
       inject: [ConfigService],
     }),
+    TenantsModule,
     AuthModule,
     UsersModule,
     ProductsModule,
@@ -64,8 +84,21 @@ import { WishlistItem } from './modules/wishlist/entities/wishlist-item.entity';
     PaymentsModule,
     InventoryModule,
     WishlistModule,
+    FinanceModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: AdminTenantGuard,
+    },
+  ],
 })
-export class AppModule { }
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(TenantMiddleware)
+      .forRoutes('*');
+  }
+}

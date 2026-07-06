@@ -1,77 +1,94 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, ManyToMany, JoinTable, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  ManyToMany,
+  JoinTable,
+  OneToMany,
+} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Review } from '../../reviews/entities/review.entity';
+import { Tenant } from '../../tenants/entities/tenant.entity';
 
 export enum ProductStatus {
-    DRAFT = 'draft',
-    PUBLISHED = 'published',
-    OUT_OF_STOCK = 'out_of_stock',
-    DISCONTINUED = 'discontinued'
+  DRAFT = 'draft',
+  PUBLISHED = 'published',
+  OUT_OF_STOCK = 'out_of_stock',
+  DISCONTINUED = 'discontinued',
 }
 
 @Entity('products')
 export class Product {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column()
-    name: string;
+  @Column()
+  tenantId: string;
 
-    @Column('text')
-    description: string;
+  @ManyToOne(() => Tenant)
+  tenant: Tenant;
 
-    @Column('decimal', { precision: 10, scale: 2 })
-    price: number;
+  @Column()
+  name: string;
 
-    @Column('int')
-    stockQuantity: number;
+  @Column('text')
+  description: string;
 
-    @Column({
-        type: 'enum',
-        enum: ProductStatus,
-        default: ProductStatus.DRAFT
-    })
-    status: ProductStatus;
+  @Column('decimal', { precision: 10, scale: 2 })
+  price: number;
 
-    @Column('simple-array', { nullable: true })
-    images: string[];
+  @Column('int')
+  stockQuantity: number;
 
-    @Column('simple-array')
-    categories: string[];
+  @Column({
+    type: 'enum',
+    enum: ProductStatus,
+    default: ProductStatus.DRAFT,
+  })
+  status: ProductStatus;
 
-    @Column({ type: 'jsonb', nullable: true })
-    specifications: Record<string, any>;
+  @Column('simple-array', { nullable: true })
+  images: string[];
 
-    @Column({ default: 0 })
-    rating: number;
+  @Column('simple-array')
+  categories: string[];
 
-    @Column({ default: 0 })
-    reviewCount: number;
+  @Column({ type: 'jsonb', nullable: true })
+  specifications: Record<string, any>;
 
-    @Column({ default: false })
-    isFeatured: boolean;
+  @Column({ default: 0 })
+  rating: number;
 
-    @Column({ nullable: true })
-    brand: string;
+  @Column({ default: 0 })
+  reviewCount: number;
 
-    @Column({ nullable: true })
-    sku: string;
+  @Column({ default: false })
+  isFeatured: boolean;
 
-    @Column({ default: 0 })
-    discountPercentage: number;
+  @Column({ nullable: true })
+  brand: string;
 
-    @ManyToOne(() => User)
-    vendor: User;
+  @Column({ nullable: true })
+  sku: string;
 
-    @Column({ nullable: true })
-    vendorId: string;
+  @Column({ default: 0 })
+  discountPercentage: number;
 
-    @OneToMany(() => Review, review => review.product)
-    reviews: Review[];
+  @ManyToOne(() => User)
+  vendor: User;
 
-    @CreateDateColumn()
-    createdAt: Date;
+  @Column({ nullable: true })
+  vendorId: string;
 
-    @UpdateDateColumn()
-    updatedAt: Date;
-} 
+  @OneToMany(() => Review, (review) => review.product)
+  reviews: Review[];
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+}

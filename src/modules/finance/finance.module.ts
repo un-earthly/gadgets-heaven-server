@@ -20,31 +20,26 @@ import { InstallmentController } from './controllers/installment.controller';
 import { PayoutController } from './controllers/payout.controller';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([
-            Transaction,
-            Invoice,
-            Installment,
-            Payout,
-        ]),
-    ],
-    providers: [
-        TransactionService,
-        InvoiceService,
-        InstallmentService,
-        PayoutService,
-    ],
-    controllers: [
-        TransactionController,
-        InvoiceController,
-        InstallmentController,
-        PayoutController,
-    ],
-    exports: [
-        TransactionService,
-        InvoiceService,
-        InstallmentService,
-        PayoutService,
-    ],
+  imports: [
+    TypeOrmModule.forFeature([Transaction, Invoice, Installment, Payout]),
+  ],
+  providers: [
+    TransactionService,
+    InvoiceService,
+    InstallmentService,
+    PayoutService,
+  ],
+  controllers: [
+    TransactionController,
+    InvoiceController,
+    InstallmentController,
+    PayoutController,
+  ],
+  exports: [
+    TransactionService,
+    InvoiceService,
+    InstallmentService,
+    PayoutService,
+  ],
 })
-export class FinanceModule { } 
+export class FinanceModule {}

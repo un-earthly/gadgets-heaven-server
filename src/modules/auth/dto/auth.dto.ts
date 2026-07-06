@@ -1,34 +1,40 @@
-import { IsEmail, IsString, MinLength, IsOptional, IsEnum } from 'class-validator';
-import { UserRole } from '../entities/user.entity';
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  IsOptional,
+  IsEnum,
+} from 'class-validator';
+import { UserRole } from '../../users/entities/user.entity';
 
 export class LoginDto {
-    @IsEmail()
-    email: string;
+  @IsEmail()
+  email: string;
 
-    @IsString()
-    @MinLength(6)
-    password: string;
+  @IsString()
+  @MinLength(6)
+  password: string;
 }
 
 export class RegisterDto {
-    @IsEmail()
-    email: string;
+  @IsEmail()
+  email: string;
 
-    @IsString()
-    @MinLength(6)
-    password: string;
+  @IsString()
+  @MinLength(6)
+  password: string;
 
-    @IsString()
-    firstName: string;
+  @IsString()
+  firstName: string;
 
-    @IsString()
-    lastName: string;
+  @IsString()
+  lastName: string;
 
-    @IsString()
-    @IsOptional()
-    phoneNumber?: string;
+  @IsString()
+  @IsOptional()
+  phoneNumber?: string;
 
-    @IsEnum(UserRole)
-    @IsOptional()
-    role?: UserRole;
-} 
+  @IsEnum(UserRole)
+  @IsOptional()
+  role?: UserRole;
+}

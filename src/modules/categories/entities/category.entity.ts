@@ -1,47 +1,66 @@
-import { Entity, PrimaryGeneratedColumn, Column, Tree, TreeChildren, TreeParent, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  Tree,
+  TreeChildren,
+  TreeParent,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  Unique,
+} from 'typeorm';
+import { Tenant } from '../../tenants/entities/tenant.entity';
 
 @Entity('categories')
 @Tree('materialized-path')
+@Unique(['tenantId', 'slug'])
 export class Category {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column()
-    name: string;
+  @Column()
+  tenantId: string;
 
-    @Column({ unique: true })
-    slug: string;
+  @ManyToOne(() => Tenant)
+  tenant: Tenant;
 
-    @Column({ nullable: true })
-    description: string;
+  @Column()
+  name: string;
 
-    @Column({ nullable: true })
-    image: string;
+  @Column()
+  slug: string;
 
-    @Column({ default: true })
-    isActive: boolean;
+  @Column({ nullable: true })
+  description: string;
 
-    @Column({ default: 0 })
-    sortOrder: number;
+  @Column({ nullable: true })
+  image: string;
 
-    @Column({ nullable: true })
-    metaTitle: string;
+  @Column({ default: true })
+  isActive: boolean;
 
-    @Column({ nullable: true })
-    metaDescription: string;
+  @Column({ default: 0 })
+  sortOrder: number;
 
-    @TreeChildren()
-    children: Category[];
+  @Column({ nullable: true })
+  metaTitle: string;
 
-    @TreeParent({ onDelete: 'SET NULL' })
-    parent: Category | null;
+  @Column({ nullable: true })
+  metaDescription: string;
 
-    @Column({ nullable: true })
-    parentId: string;
+  @TreeChildren()
+  children: Category[];
 
-    @CreateDateColumn()
-    createdAt: Date;
+  @TreeParent({ onDelete: 'SET NULL' })
+  parent: Category | null;
 
-    @UpdateDateColumn()
-    updatedAt: Date;
-} 
+  @Column({ nullable: true })
+  parentId: string;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+}

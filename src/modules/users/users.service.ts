@@ -1,57 +1,68 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from './entities/user.entity';
+import { User, UserRole } from './entities/user.entity';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-    constructor(
-        @InjectRepository(User)
-        private usersRepository: Repository<User>,
-    ) { }
+  constructor(
+    @InjectRepository(User)
+    private usersRepository: Repository<User>,
+  ) {}
 
-    async create(createUserDto: Partial<User>): Promise<User> {
-        const user = this.usersRepository.create(createUserDto);
+  async create(createUserDto: Partial<User>): Promise<User> {
+    const user = this.usersRepository.create(createUserDto);
 
-        // Hash password before saving
-        if (user.password) {
-            user.password = await bcrypt.hash(user.password, 10);
-        }
-
-        return this.usersRepository.save(user);
+    if ((user.role === UserRole.ADMIN || user.role === UserRole.VENDOR) && !user.tenantId) {
+      throw new BadRequestException('Admin/Vendor users must be assigned to a tenant');
     }
 
-    async findAll(): Promise<User[]> {
-        return this.usersRepository.find();
+    // Hash password before saving
+    if (user.password) {
+      user.password = await bcrypt.hash(user.password, 10);
     }
 
-    async findOne(id: string): Promise<User> {
-        const user = await this.usersRepository.findOne({ where: { id } });
-        if (!user) {
-            throw new NotFoundException(`User with ID "${id}" not found`);
-        }
-        return user;
+    return this.usersRepository.save(user);
+  }
+
+  async findAll(): Promise<User[]> {
+    return this.usersRepository.find();
+  }
+
+  async findOne(id: string): Promise<User> {
+    const user = await this.usersRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new NotFoundException(`User with ID "${id}" not found`);
+    }
+    return user;
+  }
+
+  async findByEmail(email: string): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { email } });
+  }
+
+  async update(id: string, updateUserDto: Partial<User>): Promise<User> {
+    const user = await this.findOne(id);
+
+    const newRole = updateUserDto.role || user.role;
+    const newTenantId = updateUserDto.tenantId || user.tenantId;
+
+    if ((newRole === UserRole.ADMIN || newRole === UserRole.VENDOR) && !newTenantId) {
+      throw new BadRequestException('Admin/Vendor users must be assigned to a tenant');
     }
 
-    async findByEmail(email: string): Promise<User | null> {
-        return this.usersRepository.findOne({ where: { email } });
+    // If updating password, hash it
+    if (updateUserDto.password) {
+      updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
     }
 
-    async update(id: string, updateUserDto: Partial<User>): Promise<User> {
-        const user = await this.findOne(id);
+    Object.assign(user, updateUserDto);
+    return this.usersRepository.save(user);
+  }
 
-        // If updating password, hash it
-        if (updateUserDto.password) {
-            updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
-        }
-
-        Object.assign(user, updateUserDto);
-        return this.usersRepository.save(user);
-    }
-
-    async remove(id: string): Promise<void> {
-        const user = await this.findOne(id);
-        await this.usersRepository.remove(user);
-    }
-} 
+  async remove(id: string): Promise<void> {
+    const user = await this.findOne(id);
+    await this.usersRepository.remove(user);
+  }
+}

@@ -1,68 +1,82 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Order } from '../../orders/entities/order.entity';
+import { Tenant } from '../../tenants/entities/tenant.entity';
 
 export enum InstallmentStatus {
-    PENDING = 'pending',
-    PAID = 'paid',
-    OVERDUE = 'overdue',
-    DEFAULTED = 'defaulted'
+  PENDING = 'pending',
+  PAID = 'paid',
+  OVERDUE = 'overdue',
+  DEFAULTED = 'defaulted',
 }
 
 @Entity('installments')
 export class Installment {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @ManyToOne(() => Order, { eager: true })
-    order: Order;
+  @Column()
+  tenantId: string;
 
-    @Column()
-    orderId: string;
+  @ManyToOne(() => Tenant)
+  tenant: Tenant;
 
-    @ManyToOne(() => User, { eager: true })
-    user: User;
+  @ManyToOne(() => Order, { eager: true })
+  order: Order;
 
-    @Column()
-    userId: string;
+  @Column()
+  orderId: string;
 
-    @Column('decimal', { precision: 10, scale: 2 })
-    amount: number;
+  @ManyToOne(() => User, { eager: true })
+  user: User;
 
-    @Column()
-    installmentNumber: number;
+  @Column()
+  userId: string;
 
-    @Column()
-    totalInstallments: number;
+  @Column('decimal', { precision: 10, scale: 2 })
+  amount: number;
 
-    @Column({ type: 'date' })
-    dueDate: Date;
+  @Column()
+  installmentNumber: number;
 
-    @Column({ type: 'date', nullable: true })
-    paidDate: Date;
+  @Column()
+  totalInstallments: number;
 
-    @Column({
-        type: 'enum',
-        enum: InstallmentStatus,
-        default: InstallmentStatus.PENDING
-    })
-    status: InstallmentStatus;
+  @Column({ type: 'date' })
+  dueDate: Date;
 
-    @Column('decimal', { precision: 10, scale: 2, default: 0 })
-    lateFee: number;
+  @Column({ type: 'date', nullable: true })
+  paidDate: Date;
 
-    @Column({ type: 'jsonb', nullable: true })
-    metadata: Record<string, any>;
+  @Column({
+    type: 'enum',
+    enum: InstallmentStatus,
+    default: InstallmentStatus.PENDING,
+  })
+  status: InstallmentStatus;
 
-    @Column({ nullable: true })
-    paymentMethod: string;
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  lateFee: number;
 
-    @Column({ nullable: true })
-    transactionId: string;
+  @Column({ type: 'jsonb', nullable: true })
+  metadata: Record<string, any>;
 
-    @CreateDateColumn()
-    createdAt: Date;
+  @Column({ nullable: true })
+  paymentMethod: string;
 
-    @UpdateDateColumn()
-    updatedAt: Date;
-} 
+  @Column({ nullable: true })
+  transactionId: string;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+}

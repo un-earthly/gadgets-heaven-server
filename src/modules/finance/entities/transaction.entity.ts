@@ -1,81 +1,95 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Order } from '../../orders/entities/order.entity';
+import { Tenant } from '../../tenants/entities/tenant.entity';
 
 export enum TransactionType {
-    CREDIT = 'credit',
-    DEBIT = 'debit'
+  CREDIT = 'credit',
+  DEBIT = 'debit',
 }
 
 export enum TransactionStatus {
-    PENDING = 'pending',
-    COMPLETED = 'completed',
-    FAILED = 'failed',
-    REFUNDED = 'refunded'
+  PENDING = 'pending',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
+  REFUNDED = 'refunded',
 }
 
 export enum PaymentMethod {
-    CARD = 'card',
-    BANK_TRANSFER = 'bank_transfer',
-    WALLET = 'wallet'
+  CARD = 'card',
+  BANK_TRANSFER = 'bank_transfer',
+  WALLET = 'wallet',
 }
 
 @Entity('transactions')
 export class Transaction {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column('decimal', { precision: 10, scale: 2 })
-    amount: number;
+  @Column()
+  tenantId: string;
 
-    @Column({
-        type: 'enum',
-        enum: TransactionType,
-        default: TransactionType.CREDIT
-    })
-    type: TransactionType;
+  @ManyToOne(() => Tenant)
+  tenant: Tenant;
 
-    @Column({
-        type: 'enum',
-        enum: TransactionStatus,
-        default: TransactionStatus.PENDING
-    })
-    status: TransactionStatus;
+  @Column('decimal', { precision: 10, scale: 2 })
+  amount: number;
 
-    @Column({
-        type: 'enum',
-        enum: PaymentMethod,
-        default: PaymentMethod.CARD
-    })
-    method: PaymentMethod;
+  @Column({
+    type: 'enum',
+    enum: TransactionType,
+    default: TransactionType.CREDIT,
+  })
+  type: TransactionType;
 
-    @ManyToOne(() => User, { eager: true })
-    user: User;
+  @Column({
+    type: 'enum',
+    enum: TransactionStatus,
+    default: TransactionStatus.PENDING,
+  })
+  status: TransactionStatus;
 
-    @Column()
-    userId: string;
+  @Column({
+    type: 'enum',
+    enum: PaymentMethod,
+    default: PaymentMethod.CARD,
+  })
+  method: PaymentMethod;
 
-    @ManyToOne(() => Order, { nullable: true, eager: true })
-    order: Order;
+  @ManyToOne(() => User, { eager: true })
+  user: User;
 
-    @Column({ nullable: true })
-    orderId: string;
+  @Column()
+  userId: string;
 
-    @Column({ nullable: true })
-    description: string;
+  @ManyToOne(() => Order, { nullable: true, eager: true })
+  order: Order;
 
-    @Column({ type: 'jsonb', nullable: true })
-    metadata: Record<string, any>;
+  @Column({ nullable: true })
+  orderId: string;
 
-    @Column({ nullable: true })
-    referenceNumber: string;
+  @Column({ nullable: true })
+  description: string;
 
-    @Column({ nullable: true })
-    gatewayTransactionId: string;
+  @Column({ type: 'jsonb', nullable: true })
+  metadata: Record<string, any>;
 
-    @CreateDateColumn()
-    createdAt: Date;
+  @Column({ nullable: true })
+  referenceNumber: string;
 
-    @UpdateDateColumn()
-    updatedAt: Date;
-} 
+  @Column({ nullable: true })
+  gatewayTransactionId: string;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+}
