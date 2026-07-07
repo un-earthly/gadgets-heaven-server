@@ -53,11 +53,23 @@ export class NotificationsService {
   ) {}
 
   async sendNotification(payload: NotificationPayload) {
-    // Emit to queue for async processing
-    this.client.emit('send_notification', payload);
-
-    // For immediate processing if needed
-    return this.processNotification(payload);
+    // Publish to the notifications queue; the embedded microservice consumer
+    // (@EventPattern('send_notification') in NotificationsController) performs
+    // the actual delivery. This is the single delivery path — do NOT also call
+    // processNotification here or every notification would be sent twice.
+    //
+    // client.emit() returns a cold Observable: it only publishes once
+    // subscribed. Fire-and-forget with error logging so a broker hiccup can
+    // never break the order/payment flow that triggered the notification.
+    return new Promise<{ queued: boolean }>((resolve) => {
+      this.client.emit('send_notification', payload).subscribe({
+        error: (err: Error) => {
+          this.logger.warn(`Failed to enqueue notification: ${err.message}`);
+          resolve({ queued: false });
+        },
+        complete: () => resolve({ queued: true }),
+      });
+    });
   }
 
   async sendBulkNotifications(payloads: NotificationPayload[]) {

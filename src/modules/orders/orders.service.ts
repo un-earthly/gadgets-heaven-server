@@ -208,6 +208,16 @@ export class OrdersService {
         ? OrderPaymentStatus.COD_PENDING
         : OrderPaymentStatus.PENDING;
 
+    // Capture the recipient contact for order-lifecycle notifications
+    // (WhatsApp). Without this, notifyOrderEvent has no phone to send to.
+    if (createOrderDto.recipientPhone || createOrderDto.recipientName) {
+      order.metadata = {
+        ...(order.metadata ?? {}),
+        recipientPhone: createOrderDto.recipientPhone,
+        recipientName: createOrderDto.recipientName,
+      };
+    }
+
     // Calculate total and validate products
     let totalAmount = 0;
     const orderItems: OrderItem[] = [];

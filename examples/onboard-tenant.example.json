@@ -1,0 +1,37 @@
+{
+  "name": "Dhaka Threads",
+  "slug": "dhaka-threads",
+  "logoUrl": "/logo-beige.png",
+  "themePrimaryColor": "#7c3aed",
+  "themeSecondaryColor": "#ede9fe",
+  "contactPhone": "+8801800000000",
+  "contactEmail": "hello@dhakathreads.com",
+  "footerText": "© Dhaka Threads. All rights reserved.",
+  "activePaymentMethods": ["cod", "sslcommerz"],
+  "activeCourier": "steadfast",
+  "admin": {
+    "email": "admin@dhakathreads.com",
+    "password": "password123",
+    "firstName": "Dhaka",
+    "lastName": "Admin"
+  },
+  "categories": [
+    { "name": "Apparel", "slug": "apparel", "description": "Everyday wear" }
+  ],
+  "products": [
+    {
+      "name": "Classic Cotton T-Shirt",
+      "description": "Premium combed-cotton tee",
+      "price": 650,
+      "stockQuantity": 100,
+      "sku": "DT-TEE-01",
+      "categories": ["apparel"],
+      "variants": [
+        { "attributes": { "size": "S" }, "sku": "DT-TEE-01-S", "stockQuantity": 30 },
+        { "attributes": { "size": "M" }, "sku": "DT-TEE-01-M", "stockQuantity": 25 },
+        { "attributes": { "size": "L" }, "sku": "DT-TEE-01-L", "stockQuantity": 3 },
+        { "attributes": { "size": "XL" }, "sku": "DT-TEE-01-XL", "stockQuantity": 0 }
+      ]
+    }
+  ]
+}

@@ -11,6 +11,46 @@ import { encryptSecret } from '../../common/crypto.util';
 export const DEFAULT_TENANT_ID = 'de7a5e8f-7e04-4b5a-93ef-3c588523c91d';
 export const SECOND_TENANT_ID = 'c2b7d59b-1349-4f76-8f23-5e8c187b5a8e';
 
+// Full description of a tenant to provision: branding, first admin, category
+// taxonomy and seed products (each optionally with stock-tracked variants).
+export interface ProvisionTenantVariantSpec {
+  attributes?: Record<string, string>;
+  sku?: string;
+  stockQuantity: number;
+  priceOverride?: number | null;
+}
+export interface ProvisionTenantProductSpec {
+  name: string;
+  description?: string;
+  price: number;
+  stockQuantity: number;
+  sku?: string;
+  categories?: string[];
+  variants?: ProvisionTenantVariantSpec[];
+}
+export interface ProvisionTenantSpec {
+  id?: string; // fixed id (seed only); omit for real onboarding
+  name: string;
+  slug: string;
+  logoUrl?: string;
+  themePrimaryColor?: string;
+  themeSecondaryColor?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  footerText?: string;
+  activePaymentMethods?: string[];
+  activeCourier?: string;
+  simpleMode?: boolean; // defaults to true via the entity default
+  admin: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName?: string;
+  };
+  categories?: { name: string; slug: string; description?: string }[];
+  products?: ProvisionTenantProductSpec[];
+}
+
 @Injectable()
 export class TenantsService implements OnModuleInit {
   private readonly logger = new Logger(TenantsService.name);
@@ -95,6 +135,98 @@ export class TenantsService implements OnModuleInit {
     return this.tenantRepository.save(tenant);
   }
 
+  // ---- Reusable tenant onboarding (V1-STEP 10) --------------------------
+  // Single generalized provisioning path used by BOTH the seed routine and
+  // the onboard-tenant CLI, so there is never a copy-pasted per-tenant script.
+  // Idempotent by slug. New tenants inherit simpleMode=true from the entity
+  // default unless the spec overrides it. All rows are written with an
+  // explicit tenantId because provisioning runs outside a request's tenant
+  // context (the TenantSubscriber only auto-fills tenantId within a request).
+  async provisionTenant(spec: ProvisionTenantSpec): Promise<Tenant> {
+    const existing = await this.tenantRepository.findOne({
+      where: { slug: spec.slug },
+    });
+    if (existing) {
+      this.logger.log(
+        `Tenant "${spec.slug}" already exists — skipping provision.`,
+      );
+      return existing;
+    }
+
+    this.logger.log(`Provisioning tenant: ${spec.name} (${spec.slug})`);
+    const tenant = this.tenantRepository.create({
+      ...(spec.id ? { id: spec.id } : {}),
+      name: spec.name,
+      slug: spec.slug,
+      status: TenantStatus.ACTIVE,
+      activePaymentMethods: spec.activePaymentMethods ?? ['cod'],
+      activeCourier: spec.activeCourier ?? 'steadfast',
+      footerText: spec.footerText ?? `© ${spec.name}. All rights reserved.`,
+      logoUrl: spec.logoUrl,
+      themePrimaryColor: spec.themePrimaryColor,
+      themeSecondaryColor: spec.themeSecondaryColor,
+      contactPhone: spec.contactPhone,
+      contactEmail: spec.contactEmail,
+      ...(spec.simpleMode !== undefined ? { simpleMode: spec.simpleMode } : {}),
+    });
+    await this.tenantRepository.save(tenant);
+
+    // Initial admin user
+    const admin = this.userRepository.create({
+      tenantId: tenant.id,
+      email: spec.admin.email,
+      password: spec.admin.password,
+      firstName: spec.admin.firstName,
+      lastName: spec.admin.lastName ?? 'Admin',
+      role: UserRole.ADMIN,
+      isActive: true,
+    });
+    await this.userRepository.save(admin);
+
+    // Category taxonomy
+    for (const cat of spec.categories ?? []) {
+      const category = this.categoryRepository.create({
+        tenantId: tenant.id,
+        name: cat.name,
+        slug: cat.slug,
+        description: cat.description,
+      });
+      await this.categoryRepository.save(category);
+    }
+
+    // Seed products (with optional variants)
+    for (const p of spec.products ?? []) {
+      const product = this.productRepository.create({
+        tenantId: tenant.id,
+        name: p.name,
+        description: p.description ?? '',
+        price: p.price,
+        stockQuantity: p.stockQuantity,
+        sku: p.sku,
+        categories: p.categories ?? [],
+        status: ProductStatus.PUBLISHED,
+      });
+      await this.productRepository.save(product);
+
+      for (const v of p.variants ?? []) {
+        const variant = this.variantRepository.create({
+          tenantId: tenant.id,
+          productId: product.id,
+          attributes: v.attributes ?? {},
+          sku: v.sku,
+          stockQuantity: v.stockQuantity,
+          priceOverride: v.priceOverride ?? null,
+        });
+        await this.variantRepository.save(variant);
+      }
+    }
+
+    this.logger.log(
+      `Provisioned tenant ${tenant.slug} (id=${tenant.id}) with admin ${admin.email}`,
+    );
+    return tenant;
+  }
+
   async seedDefaultTenantAndMigrate() {
     try {
       // Check if default tenant exists by slug
@@ -148,72 +280,46 @@ export class TenantsService implements OnModuleInit {
 
       const targetTenantId = defaultTenant.id;
 
-      // Seed second tenant for isolation proof
-      let secondTenant = await this.tenantRepository.findOne({
-        where: { slug: 'jersey-mania' },
-      });
-      if (!secondTenant) {
-        this.logger.log('Seeding second tenant: Jersey Mania');
-        secondTenant = this.tenantRepository.create({
-          id: SECOND_TENANT_ID,
-          name: 'Jersey Mania',
-          slug: 'jersey-mania',
-          status: TenantStatus.ACTIVE,
-          activePaymentMethods: ['cod'],
-          activeCourier: 'steadfast',
-          footerText: '© Jersey Mania. All rights reserved.',
-          logoUrl: '/logo-beige.png',
-          themePrimaryColor: '#059669',
-          themeSecondaryColor: '#d1fae5',
-          contactPhone: '+8801900000000',
-          contactEmail: 'info@jerseymania.com',
-        });
-        await this.tenantRepository.save(secondTenant);
-
-        // Seed category for second tenant
-        const category = this.categoryRepository.create({
-          tenantId: secondTenant.id,
-          name: 'Jerseys',
-          slug: 'jerseys',
-          description: 'Quality sports jerseys',
-        });
-        await this.categoryRepository.save(category);
-
-        // Seed product for second tenant
-        const product = this.productRepository.create({
-          tenantId: secondTenant.id,
-          name: 'Bangladesh Cricket Jersey',
-          description: 'Official replica cricket jersey',
-          price: 1200,
-          stockQuantity: 50,
-          sku: 'BD-CRIC-01',
-          categories: ['sports', 'jerseys'],
-          status: ProductStatus.PUBLISHED,
-        });
-        await this.productRepository.save(product);
-
-        // Seed user for second tenant
-        const user = this.userRepository.create({
-          tenantId: secondTenant.id,
+      // Second tenant (isolation proof) — provisioned through the same
+      // reusable path a real new tenant uses. L is deliberately low-stock and
+      // XL zero-stock so the per-variant out-of-stock UI has real data.
+      await this.provisionTenant({
+        id: SECOND_TENANT_ID,
+        name: 'Jersey Mania',
+        slug: 'jersey-mania',
+        activePaymentMethods: ['cod'],
+        activeCourier: 'steadfast',
+        logoUrl: '/logo-beige.png',
+        themePrimaryColor: '#059669',
+        themeSecondaryColor: '#d1fae5',
+        contactPhone: '+8801900000000',
+        contactEmail: 'info@jerseymania.com',
+        admin: {
           email: 'vendor@jerseymania.com',
           password: 'password123',
           firstName: 'Jersey',
           lastName: 'Vendor',
-          role: UserRole.VENDOR,
-          isActive: true,
-        });
-        await this.userRepository.save(user);
-      } else {
-        this.logger.log('Updating second tenant branding fields');
-        secondTenant.logoUrl = '/logo-beige.png';
-        secondTenant.themePrimaryColor = '#059669';
-        secondTenant.themeSecondaryColor = '#d1fae5';
-        secondTenant.contactPhone = '+8801900000000';
-        secondTenant.contactEmail = 'info@jerseymania.com';
-        await this.tenantRepository.save(secondTenant);
-      }
-
-      await this.seedJerseyVariants();
+        },
+        categories: [
+          { name: 'Jerseys', slug: 'jerseys', description: 'Quality sports jerseys' },
+        ],
+        products: [
+          {
+            name: 'Bangladesh Cricket Jersey',
+            description: 'Official replica cricket jersey',
+            price: 1200,
+            stockQuantity: 50,
+            sku: 'BD-CRIC-01',
+            categories: ['sports', 'jerseys'],
+            variants: [
+              { attributes: { size: 'S' }, sku: 'BD-CRIC-01-S', stockQuantity: 20 },
+              { attributes: { size: 'M' }, sku: 'BD-CRIC-01-M', stockQuantity: 15 },
+              { attributes: { size: 'L' }, sku: 'BD-CRIC-01-L', stockQuantity: 2 },
+              { attributes: { size: 'XL' }, sku: 'BD-CRIC-01-XL', stockQuantity: 0 },
+            ],
+          },
+        ],
+      });
 
       // Migrate existing data where tenantId is null
       const tables = [
@@ -267,40 +373,4 @@ export class TenantsService implements OnModuleInit {
     }
   }
 
-  // Real size variants for Jersey Mania's cricket jersey. L is deliberately
-  // low-stock and XL deliberately zero-stock so the per-variant
-  // out-of-stock UI has real data to validate against.
-  private async seedJerseyVariants() {
-    const product = await this.productRepository.findOne({
-      where: {
-        tenantId: SECOND_TENANT_ID,
-        name: 'Bangladesh Cricket Jersey',
-      },
-    });
-    if (!product) return;
-
-    const existing = await this.variantRepository.count({
-      where: { productId: product.id },
-    });
-    if (existing > 0) return;
-
-    this.logger.log('Seeding size variants for Bangladesh Cricket Jersey');
-    const sizes: { size: string; stock: number }[] = [
-      { size: 'S', stock: 20 },
-      { size: 'M', stock: 15 },
-      { size: 'L', stock: 2 },
-      { size: 'XL', stock: 0 },
-    ];
-    for (const { size, stock } of sizes) {
-      const variant = this.variantRepository.create({
-        tenantId: SECOND_TENANT_ID,
-        productId: product.id,
-        attributes: { size },
-        sku: `BD-CRIC-01-${size}`,
-        stockQuantity: stock,
-        priceOverride: null,
-      });
-      await this.variantRepository.save(variant);
-    }
-  }
 }

@@ -52,7 +52,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
         port: configService.get('DB_PORT'),
         username: configService.get('DB_USERNAME'),
         password: configService.get('DB_PASSWORD'),
-        database: configService.get('DB_DATABASE'),
+        database: configService.get('DB_NAME'),
         entities: [
           Tenant,
           User,

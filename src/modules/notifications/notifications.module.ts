@@ -20,8 +20,13 @@ import { NotificationTemplatesController } from './notification-templates.contro
         useFactory: (configService: ConfigService) => ({
           transport: Transport.RMQ,
           options: {
-            urls: ['amqp://admin:admin123@localhost:5672'],
-            queue: 'notifications_queue',
+            urls: [
+              configService.get<string>('RABBITMQ_URL') ??
+                'amqp://admin:admin123@localhost:5672',
+            ],
+            queue:
+              configService.get<string>('RABBITMQ_NOTIFICATIONS_QUEUE') ??
+              'notifications_queue',
             queueOptions: {
               durable: true,
             },

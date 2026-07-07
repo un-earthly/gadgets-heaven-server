@@ -62,4 +62,18 @@ export class CreateOrderDto {
   @IsEnum(PaymentType)
   @IsOptional()
   paymentType?: PaymentType;
+
+  @ApiProperty({
+    description:
+      'Recipient WhatsApp/phone number (E.164, e.g. 8801700000000) used for order lifecycle notifications',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  recipientPhone?: string;
+
+  @ApiProperty({ description: 'Recipient name', required: false })
+  @IsString()
+  @IsOptional()
+  recipientName?: string;
 }
