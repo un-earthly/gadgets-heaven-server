@@ -5,7 +5,9 @@ import {
   IsArray,
   ValidateNested,
   IsOptional,
+  IsEnum,
 } from 'class-validator';
+import { PaymentType } from '../entities/order.entity';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -14,6 +16,14 @@ export class OrderItemDto {
   @IsString()
   @IsNotEmpty()
   productId: string;
+
+  @ApiProperty({
+    description: 'Product variant ID (for stock-tracked variants)',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  variantId?: string;
 
   @ApiProperty({ description: 'Quantity of the product' })
   @IsNumber()
@@ -42,4 +52,14 @@ export class CreateOrderDto {
   @IsString()
   @IsOptional()
   paymentMethod?: string;
+
+  @ApiProperty({
+    description: 'Payment type: online (gateway) or cod (cash on delivery)',
+    enum: PaymentType,
+    required: false,
+    default: PaymentType.COD,
+  })
+  @IsEnum(PaymentType)
+  @IsOptional()
+  paymentType?: PaymentType;
 }

@@ -10,6 +10,7 @@ import { CartItem } from './entities/cart-item.entity';
 import { CreateCartItemDto } from './dto/create-cart-item.dto';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto';
 import { Product } from '../products/entities/product.entity';
+import { ProductVariant } from '../products/entities/product-variant.entity';
 
 @Injectable()
 export class CartService {
@@ -20,6 +21,8 @@ export class CartService {
     private readonly cartItemRepository: Repository<CartItem>,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    @InjectRepository(ProductVariant)
+    private readonly variantRepository: Repository<ProductVariant>,
   ) {}
 
   async getActiveCart(userId: string): Promise<Cart> {
@@ -29,11 +32,16 @@ export class CartService {
     });
 
     if (!cart) {
-      cart = await this.cartRepository.save({
-        userId,
-        status: CartStatus.ACTIVE,
-        items: [],
-      });
+      // Must go through create() so the entity has its class fields defined —
+      // TenantSubscriber only stamps tenantId onto entities that carry the
+      // property, and a plain object literal does not.
+      cart = await this.cartRepository.save(
+        this.cartRepository.create({
+          userId,
+          status: CartStatus.ACTIVE,
+          items: [],
+        }),
+      );
     }
 
     return cart;
@@ -52,25 +60,51 @@ export class CartService {
       throw new NotFoundException('Product not found');
     }
 
-    if (product.stockQuantity < createCartItemDto.quantity) {
+    let variant: ProductVariant | null = null;
+    if (createCartItemDto.variantId) {
+      variant = await this.variantRepository.findOne({
+        where: {
+          id: createCartItemDto.variantId,
+          productId: product.id,
+        },
+      });
+      if (!variant) {
+        throw new NotFoundException('Product variant not found');
+      }
+      if (variant.stockQuantity < createCartItemDto.quantity) {
+        throw new BadRequestException('Not enough stock available');
+      }
+    } else if (product.stockQuantity < createCartItemDto.quantity) {
       throw new BadRequestException('Not enough stock available');
     }
 
+    const unitPrice = variant?.priceOverride ?? product.price;
+
     const existingItem = cart.items.find(
-      (item) => item.productId === createCartItemDto.productId,
+      (item) =>
+        item.productId === createCartItemDto.productId &&
+        (item.variantId ?? null) === (createCartItemDto.variantId ?? null),
     );
 
     if (existingItem) {
-      existingItem.quantity += createCartItemDto.quantity;
+      const newQuantity = existingItem.quantity + createCartItemDto.quantity;
+      const availableStock = variant
+        ? variant.stockQuantity
+        : product.stockQuantity;
+      if (availableStock < newQuantity) {
+        throw new BadRequestException('Not enough stock available');
+      }
+      existingItem.quantity = newQuantity;
       existingItem.subtotal = existingItem.quantity * existingItem.unitPrice;
       await this.cartItemRepository.save(existingItem);
     } else {
       const newItem = this.cartItemRepository.create({
         cartId: cart.id,
         productId: product.id,
+        variantId: createCartItemDto.variantId,
         quantity: createCartItemDto.quantity,
-        unitPrice: product.price,
-        subtotal: product.price * createCartItemDto.quantity,
+        unitPrice,
+        subtotal: unitPrice * createCartItemDto.quantity,
         selectedOptions: createCartItemDto.selectedOptions,
       });
       cart.items.push(await this.cartItemRepository.save(newItem));
@@ -93,16 +127,30 @@ export class CartService {
     }
 
     if (updateCartItemDto.quantity !== undefined) {
-      const product = await this.productRepository.findOne({
-        where: { id: item.productId },
-      });
+      if (item.variantId) {
+        const variant = await this.variantRepository.findOne({
+          where: { id: item.variantId, productId: item.productId },
+        });
 
-      if (!product) {
-        throw new NotFoundException('Product not found');
-      }
+        if (!variant) {
+          throw new NotFoundException('Product variant not found');
+        }
 
-      if (product.stockQuantity < updateCartItemDto.quantity) {
-        throw new BadRequestException('Not enough stock available');
+        if (variant.stockQuantity < updateCartItemDto.quantity) {
+          throw new BadRequestException('Not enough stock available');
+        }
+      } else {
+        const product = await this.productRepository.findOne({
+          where: { id: item.productId },
+        });
+
+        if (!product) {
+          throw new NotFoundException('Product not found');
+        }
+
+        if (product.stockQuantity < updateCartItemDto.quantity) {
+          throw new BadRequestException('Not enough stock available');
+        }
       }
 
       item.quantity = updateCartItemDto.quantity;

@@ -16,6 +16,7 @@ import { Category } from './modules/categories/entities/category.entity';
 import { Cart } from './modules/cart/entities/cart.entity';
 import { CartItem } from './modules/cart/entities/cart-item.entity';
 import { Product } from './modules/products/entities/product.entity';
+import { ProductVariant } from './modules/products/entities/product-variant.entity';
 import { Payment } from './modules/payments/entities/payment.entity';
 import { CartModule } from './modules/cart/cart.module';
 import { PaymentsModule } from './modules/payments/payments.module';
@@ -35,6 +36,8 @@ import { Transaction } from './modules/finance/entities/transaction.entity';
 import { Invoice } from './modules/finance/entities/invoice.entity';
 import { Payout } from './modules/finance/entities/payout.entity';
 import { Installment } from './modules/finance/entities/installment.entity';
+import { NotificationTemplate } from './modules/notifications/entities/notification-template.entity';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -59,6 +62,7 @@ import { Installment } from './modules/finance/entities/installment.entity';
           Cart,
           CartItem,
           Product,
+          ProductVariant,
           Payment,
           Wishlist,
           WishlistItem,
@@ -67,7 +71,8 @@ import { Installment } from './modules/finance/entities/installment.entity';
           Transaction,
           Invoice,
           Payout,
-          Installment
+          Installment,
+          NotificationTemplate,
         ],
         synchronize: true,
       }),
@@ -85,6 +90,7 @@ import { Installment } from './modules/finance/entities/installment.entity';
     InventoryModule,
     WishlistModule,
     FinanceModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [
@@ -97,8 +103,6 @@ import { Installment } from './modules/finance/entities/installment.entity';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(TenantMiddleware)
-      .forRoutes('*');
+    consumer.apply(TenantMiddleware).forRoutes('*');
   }
 }

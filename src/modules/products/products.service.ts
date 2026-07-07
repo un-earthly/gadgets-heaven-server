@@ -79,7 +79,7 @@ export class ProductsService {
       order: { [sortBy]: sortOrder },
       skip: (page - 1) * limit,
       take: limit,
-      relations: ['vendor'],
+      relations: ['vendor', 'variants'],
     });
 
     return { items, total };
@@ -94,7 +94,7 @@ export class ProductsService {
 
     const product = await this.productRepository.findOne({
       where,
-      relations: ['vendor'],
+      relations: ['vendor', 'variants'],
     });
 
     if (!product) {
@@ -135,7 +135,10 @@ export class ProductsService {
   }
 
   async getFeaturedProducts(limit: number = 8): Promise<Product[]> {
-    const where: FindOptionsWhere<Product> = { isFeatured: true, status: ProductStatus.PUBLISHED };
+    const where: FindOptionsWhere<Product> = {
+      isFeatured: true,
+      status: ProductStatus.PUBLISHED,
+    };
     const tenantId = getTenantId();
     if (tenantId) {
       where.tenantId = tenantId;
@@ -156,9 +159,7 @@ export class ProductsService {
       { brand: Like(`%${term}%`) },
     ];
 
-    const where = tenantId
-      ? clauses.map((c) => ({ ...c, tenantId }))
-      : clauses;
+    const where = tenantId ? clauses.map((c) => ({ ...c, tenantId })) : clauses;
 
     return this.productRepository.find({
       where,

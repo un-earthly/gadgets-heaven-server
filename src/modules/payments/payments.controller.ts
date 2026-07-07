@@ -13,6 +13,26 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
+  @Post('initiate')
+  @ApiOperation({
+    summary: 'Initiate an online (SSLCommerz) payment for an order',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Returns the gateway redirect URL',
+  })
+  async initiate(
+    @GetUser('id') userId: string,
+    @GetUser('email') email: string,
+    @Body() body: { orderId: string; name?: string; phone?: string },
+  ): Promise<{ redirectUrl: string; paymentId: string }> {
+    return this.paymentsService.initiateOnlinePayment(userId, body.orderId, {
+      name: body.name,
+      email,
+      phone: body.phone,
+    });
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create payment' })
   @ApiResponse({

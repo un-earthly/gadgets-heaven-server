@@ -39,6 +39,30 @@ export class OrdersController {
     return this.ordersService.create(req.user.id, createOrderDto);
   }
 
+  @Post(':id/dispatch')
+  @ApiOperation({ summary: 'Create a courier consignment for the order' })
+  @ApiResponse({
+    status: 201,
+    description: 'Consignment created',
+    type: Order,
+  })
+  dispatch(@Param('id') id: string) {
+    return this.ordersService.dispatchToCourier(id);
+  }
+
+  @Post(':id/refresh-tracking')
+  @ApiOperation({
+    summary: 'Fetch the latest courier tracking status for the order',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Tracking status refreshed',
+    type: Order,
+  })
+  refreshTracking(@Param('id') id: string) {
+    return this.ordersService.refreshTrackingStatus(id);
+  }
+
   @Get()
   @ApiOperation({ summary: 'Get all orders for the current user' })
   @ApiResponse({

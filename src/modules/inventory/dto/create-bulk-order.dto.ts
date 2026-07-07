@@ -16,6 +16,10 @@ export class BulkOrderItemDto {
   @IsUUID()
   productId: string;
 
+  @IsUUID()
+  @IsOptional()
+  variantId?: string;
+
   @IsNumber()
   @Min(1)
   quantity: number;

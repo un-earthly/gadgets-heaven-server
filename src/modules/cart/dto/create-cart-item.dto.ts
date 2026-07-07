@@ -6,6 +6,14 @@ export class CreateCartItemDto {
   @IsUUID()
   productId: string;
 
+  @ApiProperty({
+    description: 'Product variant ID (for stock-tracked variants)',
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID()
+  variantId?: string;
+
   @ApiProperty({ description: 'Quantity of the product', minimum: 1 })
   @IsInt()
   @Min(1)

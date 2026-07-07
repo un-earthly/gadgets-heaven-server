@@ -1,14 +1,19 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { NotificationsService } from './services/notifications.service';
 import { NotificationsController } from './notifications.controller';
 import { EmailService } from './services/email.service';
 import { SmsService } from './services/sms.service';
+import { WhatsAppService } from './services/whatsapp.service';
+import { NotificationTemplate } from './entities/notification-template.entity';
+import { NotificationTemplatesController } from './notification-templates.controller';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
+    TypeOrmModule.forFeature([NotificationTemplate]),
     ClientsModule.registerAsync([
       {
         name: 'NOTIFICATIONS_SERVICE',
@@ -26,8 +31,8 @@ import { SmsService } from './services/sms.service';
       },
     ]),
   ],
-  controllers: [NotificationsController],
-  providers: [NotificationsService, EmailService, SmsService],
+  controllers: [NotificationsController, NotificationTemplatesController],
+  providers: [NotificationsService, EmailService, SmsService, WhatsAppService],
   exports: [NotificationsService],
 })
 export class NotificationsModule {}

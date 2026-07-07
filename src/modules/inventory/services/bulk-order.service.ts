@@ -12,6 +12,7 @@ import {
 } from '../entities/bulk-order.entity';
 import { CreateBulkOrderDto } from '../dto/create-bulk-order.dto';
 import { Product } from '../../products/entities/product.entity';
+import { ProductVariant } from '../../products/entities/product-variant.entity';
 
 @Injectable()
 export class BulkOrderService {
@@ -20,6 +21,8 @@ export class BulkOrderService {
     private readonly bulkOrderRepository: Repository<BulkOrder>,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    @InjectRepository(ProductVariant)
+    private readonly variantRepository: Repository<ProductVariant>,
   ) {}
 
   async create(
@@ -50,17 +53,35 @@ export class BulkOrderService {
           );
         }
 
-        if (product.stockQuantity < item.quantity) {
+        let variant: ProductVariant | null = null;
+        if (item.variantId) {
+          variant = await this.variantRepository.findOne({
+            where: { id: item.variantId, productId: item.productId },
+          });
+          if (!variant) {
+            throw new NotFoundException(
+              `Variant with ID ${item.variantId} not found for product ${product.name}`,
+            );
+          }
+          if (variant.stockQuantity < item.quantity) {
+            throw new BadRequestException(
+              `Not enough stock for product ${product.name}. Available: ${variant.stockQuantity}`,
+            );
+          }
+        } else if (product.stockQuantity < item.quantity) {
           throw new BadRequestException(
             `Not enough stock for product ${product.name}. Available: ${product.stockQuantity}`,
           );
         }
 
+        const unitPrice = variant?.priceOverride ?? product.price;
+
         return {
           productId: item.productId,
+          variantId: item.variantId,
           quantity: item.quantity,
-          unitPrice: product.price,
-          subtotal: product.price * item.quantity,
+          unitPrice,
+          subtotal: unitPrice * item.quantity,
           product,
         };
       }),
@@ -211,7 +232,21 @@ export class BulkOrderService {
         );
       }
 
-      if (product.stockQuantity < item.quantity) {
+      if (item.variantId) {
+        const variant = await this.variantRepository.findOne({
+          where: { id: item.variantId, productId: item.productId },
+        });
+        if (!variant) {
+          throw new NotFoundException(
+            `Variant with ID ${item.variantId} not found for product ${product.name}`,
+          );
+        }
+        if (variant.stockQuantity < item.quantity) {
+          throw new BadRequestException(
+            `Not enough stock for product ${product.name}. Required: ${item.quantity}, Available: ${variant.stockQuantity}`,
+          );
+        }
+      } else if (product.stockQuantity < item.quantity) {
         throw new BadRequestException(
           `Not enough stock for product ${product.name}. Required: ${item.quantity}, Available: ${product.stockQuantity}`,
         );
@@ -221,6 +256,20 @@ export class BulkOrderService {
 
   private async reserveStock(bulkOrder: BulkOrder): Promise<void> {
     for (const item of bulkOrder.items) {
+      if (item.variantId) {
+        const variant = await this.variantRepository.findOne({
+          where: { id: item.variantId, productId: item.productId },
+        });
+        if (!variant) {
+          throw new NotFoundException(
+            `Variant with ID ${item.variantId} not found`,
+          );
+        }
+        variant.stockQuantity -= item.quantity;
+        await this.variantRepository.save(variant);
+        continue;
+      }
+
       const product = await this.productRepository.findOne({
         where: { id: item.productId },
       });

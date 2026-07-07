@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserRole } from './entities/user.entity';
@@ -14,8 +18,13 @@ export class UsersService {
   async create(createUserDto: Partial<User>): Promise<User> {
     const user = this.usersRepository.create(createUserDto);
 
-    if ((user.role === UserRole.ADMIN || user.role === UserRole.VENDOR) && !user.tenantId) {
-      throw new BadRequestException('Admin/Vendor users must be assigned to a tenant');
+    if (
+      (user.role === UserRole.ADMIN || user.role === UserRole.VENDOR) &&
+      !user.tenantId
+    ) {
+      throw new BadRequestException(
+        'Admin/Vendor users must be assigned to a tenant',
+      );
     }
 
     // Hash password before saving
@@ -48,8 +57,13 @@ export class UsersService {
     const newRole = updateUserDto.role || user.role;
     const newTenantId = updateUserDto.tenantId || user.tenantId;
 
-    if ((newRole === UserRole.ADMIN || newRole === UserRole.VENDOR) && !newTenantId) {
-      throw new BadRequestException('Admin/Vendor users must be assigned to a tenant');
+    if (
+      (newRole === UserRole.ADMIN || newRole === UserRole.VENDOR) &&
+      !newTenantId
+    ) {
+      throw new BadRequestException(
+        'Admin/Vendor users must be assigned to a tenant',
+      );
     }
 
     // If updating password, hash it

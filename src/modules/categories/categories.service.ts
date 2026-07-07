@@ -50,7 +50,9 @@ export class CategoriesService {
         where: { tenantId },
         relations: ['parent', 'children'],
       });
-      return categories.filter(c => !c.parent || !categories.some(pc => pc.id === c.parent?.id));
+      return categories.filter(
+        (c) => !c.parent || !categories.some((pc) => pc.id === c.parent?.id),
+      );
     }
     return this.categoryRepository.findTrees();
   }

@@ -12,6 +12,7 @@ import {
 import { User } from '../../users/entities/user.entity';
 import { Review } from '../../reviews/entities/review.entity';
 import { Tenant } from '../../tenants/entities/tenant.entity';
+import { ProductVariant } from './product-variant.entity';
 
 export enum ProductStatus {
   DRAFT = 'draft',
@@ -85,6 +86,9 @@ export class Product {
 
   @OneToMany(() => Review, (review) => review.product)
   reviews: Review[];
+
+  @OneToMany(() => ProductVariant, (variant) => variant.product)
+  variants: ProductVariant[];
 
   @CreateDateColumn()
   createdAt: Date;

@@ -74,6 +74,7 @@ export class BulkOrder {
   @Column({ type: 'jsonb' })
   items: {
     productId: string;
+    variantId?: string;
     quantity: number;
     unitPrice: number;
     subtotal: number;
