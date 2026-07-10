@@ -31,6 +31,10 @@ import { getTenantId } from '../tenants/tenant.context';
 import { decryptSecret } from '../../common/crypto.util';
 import { Logger } from '@nestjs/common';
 
+import { Cart, CartStatus } from '../cart/entities/cart.entity';
+import { CartItem } from '../cart/entities/cart-item.entity';
+import { Address } from '../users/entities/address.entity';
+
 @Injectable()
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
@@ -44,6 +48,12 @@ export class OrdersService {
     private readonly variantRepository: Repository<ProductVariant>,
     @InjectRepository(Transaction)
     private readonly transactionRepository: Repository<Transaction>,
+    @InjectRepository(Cart)
+    private readonly cartRepository: Repository<Cart>,
+    @InjectRepository(CartItem)
+    private readonly cartItemRepository: Repository<CartItem>,
+    @InjectRepository(Address)
+    private readonly addressRepository: Repository<Address>,
     private readonly courier: CourierService,
     private readonly tenantsService: TenantsService,
     private readonly notificationsService: NotificationsService,
@@ -410,5 +420,146 @@ export class OrdersService {
         (order) => order.status === OrderStatus.DELIVERED,
       ).length,
     };
+  }
+
+  private formatAddress(address: Address): string {
+    const parts = [
+      `${address.firstName} ${address.lastName}`,
+      address.addressLine1,
+      address.addressLine2,
+      `${address.city}${address.state ? `, ${address.state}` : ''}${address.postalCode ? ` ${address.postalCode}` : ''}`,
+      address.country,
+      `Phone: ${address.phoneNumber}`,
+    ].filter(Boolean);
+    return parts.join('\n');
+  }
+
+  async createOrderFromCart(
+    userId: string,
+    cartId: string,
+    addressId: string,
+    paymentMethod: 'sslcommerz' | 'cod',
+  ): Promise<Order> {
+    const cart = await this.cartRepository.findOne({
+      where: { id: cartId, userId, status: CartStatus.ACTIVE },
+      relations: ['items', 'items.product'],
+    });
+    if (!cart || !cart.items || cart.items.length === 0) {
+      throw new BadRequestException('Cart is empty or not found');
+    }
+
+    const address = await this.addressRepository.findOne({
+      where: { id: addressId, userId },
+    });
+    if (!address) {
+      throw new NotFoundException('Address not found');
+    }
+
+    const formattedAddress = this.formatAddress(address);
+
+    const order = new Order();
+    order.userId = userId;
+    order.tenantId = cart.tenantId;
+    order.shippingAddress = formattedAddress;
+    order.billingAddress = formattedAddress;
+    order.status = OrderStatus.PENDING;
+    order.paymentMethod = paymentMethod;
+    order.paymentType = paymentMethod === 'cod' ? PaymentType.COD : PaymentType.ONLINE;
+    order.paymentStatus = paymentMethod === 'cod' ? OrderPaymentStatus.COD_PENDING : OrderPaymentStatus.PENDING;
+
+    order.metadata = {
+      recipientName: `${address.firstName} ${address.lastName}`,
+      recipientPhone: address.phoneNumber,
+    };
+
+    let subtotal = 0;
+    const orderItems: OrderItem[] = [];
+
+    for (const item of cart.items) {
+      const product = await this.productRepository.findOne({
+        where: { id: item.productId },
+      });
+      if (!product) {
+        throw new NotFoundException(`Product ${item.productId} not found`);
+      }
+
+      let price = product.price;
+      let variantAttrs: Record<string, string> | undefined;
+
+      if (item.variantId) {
+        const variant = await this.variantRepository.findOne({
+          where: { id: item.variantId },
+        });
+        if (!variant) {
+          throw new NotFoundException(`Variant ${item.variantId} not found`);
+        }
+        if (variant.stockQuantity < item.quantity) {
+          throw new BadRequestException(`Insufficient stock for variant ${variant.sku}`);
+        }
+        variant.stockQuantity -= item.quantity;
+        await this.variantRepository.save(variant);
+        price = variant.priceOverride ?? product.price;
+        variantAttrs = variant.attributes;
+      } else {
+        if (product.stockQuantity < item.quantity) {
+          throw new BadRequestException(`Insufficient stock for product ${product.name}`);
+        }
+        product.stockQuantity -= item.quantity;
+        await this.productRepository.save(product);
+      }
+
+      const itemSubtotal = price * item.quantity;
+      subtotal += itemSubtotal;
+
+      orderItems.push({
+        productId: item.productId,
+        quantity: item.quantity,
+        price,
+        name: product.name,
+        subtotal: itemSubtotal,
+        variantId: item.variantId || undefined,
+        variantAttributes: variantAttrs,
+      });
+    }
+
+    order.items = orderItems;
+    order.subtotal = subtotal;
+    order.shippingCost = 100;
+    order.totalAmount = subtotal + order.shippingCost;
+
+    const savedOrder = await this.orderRepository.save(order);
+
+    if (savedOrder.paymentType === PaymentType.COD) {
+      const transaction = this.transactionRepository.create({
+        amount: savedOrder.totalAmount,
+        type: TransactionType.CREDIT,
+        status: TransactionStatus.PENDING,
+        method: TransactionPaymentMethod.COD,
+        userId: savedOrder.userId,
+        orderId: savedOrder.id,
+        description: `COD order ${savedOrder.id} awaiting collection`,
+      });
+      await this.transactionRepository.save(transaction);
+      
+      savedOrder.status = OrderStatus.PROCESSING;
+      await this.orderRepository.save(savedOrder);
+
+      try {
+        const dispatchedOrder = await this.dispatchToCourier(savedOrder.id);
+        Object.assign(savedOrder, dispatchedOrder);
+      } catch (err) {
+        this.logger.error(`Failed to auto-dispatch COD order ${savedOrder.id} to courier: ${err.message}`);
+      }
+    }
+
+    await this.cartItemRepository.remove(cart.items);
+    cart.subtotal = 0;
+    cart.tax = 0;
+    cart.total = 0;
+    await this.cartRepository.save(cart);
+
+    await this.notifyOrderEvent(savedOrder, NotificationEvent.ORDER_PLACED);
+
+    return savedOrder;
   }
 }

@@ -21,12 +21,34 @@ import { UpdateOrderDto } from './dto/update-order.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Order } from './entities/order.entity';
 
+export class CheckoutDto {
+  cartId: string;
+  addressId: string;
+  paymentMethod: 'sslcommerz' | 'cod';
+}
+
 @ApiTags('orders')
 @Controller('orders')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
+
+  @Post('checkout')
+  @ApiOperation({ summary: 'Create an order from cart' })
+  @ApiResponse({
+    status: 201,
+    description: 'Order created from cart successfully',
+    type: Order,
+  })
+  checkout(@Request() req, @Body() body: CheckoutDto) {
+    return this.ordersService.createOrderFromCart(
+      req.user.id,
+      body.cartId,
+      body.addressId,
+      body.paymentMethod,
+    );
+  }
 
   @Post()
   @ApiOperation({ summary: 'Create a new order' })

@@ -9,11 +9,13 @@ import { Transaction } from '../finance/entities/transaction.entity';
 import { PaymentGatewayService } from './gateways/payment-gateway.interface';
 import { SslCommerzGateway } from './gateways/sslcommerz.gateway';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { OrdersModule } from '../orders/orders.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Payment, Order, Transaction]),
     NotificationsModule,
+    OrdersModule,
   ],
   controllers: [PaymentsController, PaymentsWebhookController],
   providers: [

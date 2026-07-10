@@ -61,6 +61,12 @@ export class Order {
   @Column('decimal', { precision: 10, scale: 2 })
   totalAmount: number;
 
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  subtotal: number;
+
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  shippingCost: number;
+
   @Column({ nullable: true })
   shippingAddress: string;
 

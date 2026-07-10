@@ -9,9 +9,13 @@ import { Transaction } from '../finance/entities/transaction.entity';
 import { CouriersModule } from '../couriers/couriers.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 
+import { Cart } from '../cart/entities/cart.entity';
+import { CartItem } from '../cart/entities/cart-item.entity';
+import { Address } from '../users/entities/address.entity';
+
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Order, Product, ProductVariant, Transaction]),
+    TypeOrmModule.forFeature([Order, Product, ProductVariant, Transaction, Cart, CartItem, Address]),
     CouriersModule,
     NotificationsModule,
   ],

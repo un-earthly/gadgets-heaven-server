@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -16,7 +17,9 @@ import {
   Order,
   OrderPaymentStatus,
   PaymentType,
+  OrderStatus,
 } from '../orders/entities/order.entity';
+import { OrdersService } from '../orders/orders.service';
 import {
   Transaction,
   TransactionType,
@@ -43,7 +46,10 @@ export class PaymentsService {
     private readonly gateway: PaymentGatewayService,
     private readonly tenantsService: TenantsService,
     private readonly notificationsService: NotificationsService,
+    private readonly ordersService: OrdersService,
   ) {}
+
+  private readonly logger = new Logger(PaymentsService.name);
 
   private gatewayCredentials(tenant: Tenant) {
     if (!tenant.sslcommerzStoreId || !tenant.sslcommerzStorePassword) {
@@ -201,7 +207,14 @@ export class PaymentsService {
             order.paymentStatus = OrderPaymentStatus.PAID;
             order.paymentId = payment.id;
             order.paymentMethod = 'sslcommerz';
+            order.status = OrderStatus.PROCESSING;
             await this.orderRepository.save(order);
+
+            try {
+              await this.ordersService.dispatchToCourier(order.id);
+            } catch (err) {
+              this.logger.error(`Failed to auto-dispatch order ${order.id} to courier on payment: ${err.message}`);
+            }
 
             await this.notificationsService.sendWhatsAppEvent(
               order.tenantId,
