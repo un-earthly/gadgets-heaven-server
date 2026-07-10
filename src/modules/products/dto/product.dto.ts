@@ -101,6 +101,11 @@ export class ProductQueryDto {
   isFeatured?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  inStock?: boolean;
+
+  @IsOptional()
   @IsNumber()
   @Type(() => Number)
   @Min(1)

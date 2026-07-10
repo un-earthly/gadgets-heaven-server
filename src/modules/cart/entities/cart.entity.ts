@@ -29,11 +29,14 @@ export class Cart {
   @ManyToOne(() => Tenant)
   tenant: Tenant;
 
-  @ManyToOne(() => User, (user) => user.carts)
+  @ManyToOne(() => User, (user) => user.carts, { nullable: true })
   user: User;
 
-  @Column()
-  userId: string;
+  @Column({ type: 'varchar', nullable: true })
+  userId: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  guestSessionId: string | null;
 
   @OneToMany(() => CartItem, (cartItem) => cartItem.cart, { cascade: true })
   items: CartItem[];

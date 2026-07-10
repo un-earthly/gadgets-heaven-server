@@ -12,6 +12,8 @@ import { UpdateCartItemDto } from './dto/update-cart-item.dto';
 import { Product } from '../products/entities/product.entity';
 import { ProductVariant } from '../products/entities/product-variant.entity';
 
+import { User } from '../users/entities/user.entity';
+
 @Injectable()
 export class CartService {
   constructor(
@@ -25,26 +27,36 @@ export class CartService {
     private readonly variantRepository: Repository<ProductVariant>,
   ) {}
 
-  async getActiveCart(userId: string): Promise<Cart> {
+  async getActiveCart(id: string): Promise<Cart> {
+    const userExists = await this.productRepository.manager.findOne(User, {
+      where: { id },
+    });
+
+    const where: any = { status: CartStatus.ACTIVE };
+    if (userExists) {
+      where.userId = id;
+    } else {
+      where.guestSessionId = id;
+    }
+
     let cart = await this.cartRepository.findOne({
-      where: { userId, status: CartStatus.ACTIVE },
+      where,
       relations: ['items', 'items.product'],
     });
 
     if (!cart) {
-      // Must go through create() so the entity has its class fields defined —
-      // TenantSubscriber only stamps tenantId onto entities that carry the
-      // property, and a plain object literal does not.
       cart = await this.cartRepository.save(
         this.cartRepository.create({
-          userId,
+          userId: userExists ? id : null,
+          guestSessionId: userExists ? null : id,
           status: CartStatus.ACTIVE,
+          isGuestCart: !userExists,
           items: [],
         }),
       );
     }
 
-    return cart;
+    return cart!;
   }
 
   async addItem(
@@ -210,5 +222,75 @@ export class CartService {
     cart.discount = 0;
     await this.recalculateCart(cart);
     return this.cartRepository.save(cart);
+  }
+
+  async mergeCart(userId: string, guestSessionId: string): Promise<Cart> {
+    const guestCart = await this.cartRepository.findOne({
+      where: { guestSessionId, status: CartStatus.ACTIVE },
+      relations: ['items'],
+    });
+
+    if (!guestCart || !guestCart.items || guestCart.items.length === 0) {
+      return this.getActiveCart(userId);
+    }
+
+    const customerCart = await this.getActiveCart(userId);
+
+    for (const guestItem of guestCart.items) {
+      const existingItem = customerCart.items.find(
+        (item) =>
+          item.productId === guestItem.productId &&
+          (item.variantId ?? null) === (guestItem.variantId ?? null),
+      );
+
+      const product = await this.productRepository.findOne({
+        where: { id: guestItem.productId },
+      });
+      if (!product) continue;
+
+      let maxStock = product.stockQuantity;
+      if (guestItem.variantId) {
+        const variant = await this.variantRepository.findOne({
+          where: { id: guestItem.variantId },
+        });
+        if (variant) {
+          maxStock = variant.stockQuantity;
+        }
+      }
+
+      if (existingItem) {
+        const newQty = Math.min(
+          existingItem.quantity + guestItem.quantity,
+          maxStock,
+        );
+        existingItem.quantity = newQty;
+        existingItem.subtotal = existingItem.quantity * existingItem.unitPrice;
+        await this.cartItemRepository.save(existingItem);
+      } else {
+        const newQty = Math.min(guestItem.quantity, maxStock);
+        if (newQty > 0) {
+          const newItem = this.cartItemRepository.create({
+            cartId: customerCart.id,
+            productId: guestItem.productId,
+            variantId: guestItem.variantId,
+            quantity: newQty,
+            unitPrice: guestItem.unitPrice,
+            subtotal: guestItem.unitPrice * newQty,
+            selectedOptions: guestItem.selectedOptions,
+          });
+          customerCart.items.push(await this.cartItemRepository.save(newItem));
+        }
+      }
+    }
+
+    // Remove the guest cart items and save the empty guest cart
+    await this.cartItemRepository.remove(guestCart.items);
+    guestCart.items = [];
+    await this.recalculateCart(guestCart);
+    await this.cartRepository.save(guestCart);
+
+    // Recalculate customer cart
+    await this.recalculateCart(customerCart);
+    return this.cartRepository.save(customerCart);
   }
 }

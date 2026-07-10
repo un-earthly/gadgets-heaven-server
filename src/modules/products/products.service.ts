@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { getTenantId } from '../tenants/tenant.context';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, Between, FindOptionsWhere, In } from 'typeorm';
+import { Repository, Like, Between, FindOptionsWhere, In, MoreThan } from 'typeorm';
 import { Product, ProductStatus } from './entities/product.entity';
 import {
   CreateProductDto,
@@ -38,6 +38,7 @@ export class ProductsService {
       status,
       brand,
       isFeatured,
+      inStock,
       page = 1,
       limit = 10,
       sortBy = 'createdAt',
@@ -72,6 +73,10 @@ export class ProductsService {
 
     if (isFeatured !== undefined) {
       where.isFeatured = isFeatured;
+    }
+
+    if (inStock) {
+      where.stockQuantity = MoreThan(0);
     }
 
     const [items, total] = await this.productRepository.findAndCount({

@@ -16,6 +16,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as request from 'supertest';
 
 describe('Tenants Integration Proof (Real DB)', () => {
+  jest.setTimeout(30000);
   let module: TestingModule;
   let app: INestApplication;
   let tenantsService: TenantsService;

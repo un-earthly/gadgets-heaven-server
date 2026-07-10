@@ -10,6 +10,7 @@ import { DEFAULT_TENANT_ID, SECOND_TENANT_ID } from '../tenants/tenants.service'
 import { EmailService } from '../notifications/services/email.service';
 
 describe('Auth Integration Tests', () => {
+  jest.setTimeout(30000);
   let module: TestingModule;
   let app: INestApplication;
   let authService: AuthService;

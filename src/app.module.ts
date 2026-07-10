@@ -10,6 +10,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { User } from './modules/users/entities/user.entity';
+import { Address } from './modules/users/entities/address.entity';
 import { Order } from './modules/orders/entities/order.entity';
 import { Review } from './modules/reviews/entities/review.entity';
 import { Category } from './modules/categories/entities/category.entity';
@@ -56,6 +57,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
         entities: [
           Tenant,
           User,
+          Address,
           Order,
           Review,
           Category,
