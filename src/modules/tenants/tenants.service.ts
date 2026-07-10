@@ -135,6 +135,36 @@ export class TenantsService implements OnModuleInit {
     return this.tenantRepository.save(tenant);
   }
 
+  async updateTenantBranding(
+    tenantId: string,
+    dto: {
+      name?: string;
+      logoUrl?: string;
+      themePrimaryColor?: string;
+      themeSecondaryColor?: string;
+      contactPhone?: string;
+      contactEmail?: string;
+      simpleMode?: boolean;
+    },
+  ): Promise<Tenant> {
+    const tenant = await this.tenantRepository.findOne({
+      where: { id: tenantId },
+    });
+    if (!tenant) {
+      throw new Error('Tenant not found');
+    }
+
+    if (dto.name !== undefined) tenant.name = dto.name;
+    if (dto.logoUrl !== undefined) tenant.logoUrl = dto.logoUrl;
+    if (dto.themePrimaryColor !== undefined) tenant.themePrimaryColor = dto.themePrimaryColor;
+    if (dto.themeSecondaryColor !== undefined) tenant.themeSecondaryColor = dto.themeSecondaryColor;
+    if (dto.contactPhone !== undefined) tenant.contactPhone = dto.contactPhone;
+    if (dto.contactEmail !== undefined) tenant.contactEmail = dto.contactEmail;
+    if (dto.simpleMode !== undefined) tenant.simpleMode = dto.simpleMode;
+
+    return this.tenantRepository.save(tenant);
+  }
+
   // ---- Reusable tenant onboarding (V1-STEP 10) --------------------------
   // Single generalized provisioning path used by BOTH the seed routine and
   // the onboard-tenant CLI, so there is never a copy-pasted per-tenant script.

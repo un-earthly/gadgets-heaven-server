@@ -562,4 +562,93 @@ export class OrdersService {
 
     return savedOrder;
   }
+
+  async findAdminOrders(
+    tenantId: string,
+    query: { search?: string; status?: OrderStatus; page?: number; limit?: number },
+  ) {
+    const { search, status, page = 1, limit = 10 } = query;
+    const qb = this.orderRepository.createQueryBuilder('order')
+      .where('order.tenantId = :tenantId', { tenantId });
+
+    if (status) {
+      qb.andWhere('order.status = :status', { status });
+    }
+
+    if (search) {
+      qb.andWhere(
+        "(order.id::text ILIKE :search OR order.shippingAddress ILIKE :search OR order.metadata->>'recipientName' ILIKE :search OR order.metadata->>'recipientPhone' ILIKE :search)",
+        { search: `%${search}%` },
+      );
+    }
+
+    const [items, total] = await qb
+      .orderBy('order.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { items, total };
+  }
+
+  async findOneAdmin(tenantId: string, id: string): Promise<Order> {
+    const order = await this.orderRepository.findOne({
+      where: { id, tenantId },
+    });
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${id} not found`);
+    }
+    return order;
+  }
+
+  async updateStatusAdmin(tenantId: string, id: string, status: OrderStatus): Promise<Order> {
+    const order = await this.findOneAdmin(tenantId, id);
+    const oldStatus = order.status;
+    order.status = status;
+
+    if (!order.metadata) {
+      order.metadata = {};
+    }
+    if (!order.metadata.statusHistory) {
+      order.metadata.statusHistory = [];
+    }
+    order.metadata.statusHistory.push({
+      status,
+      updatedAt: new Date().toISOString(),
+    });
+
+    // If status is paid, update payment flags
+    if (status === OrderStatus.DELIVERED && order.paymentType === PaymentType.COD) {
+      order.paymentStatus = OrderPaymentStatus.COD_COLLECTED;
+      order.isPaid = true;
+    } else if (status === OrderStatus.DELIVERED || status === OrderStatus.PROCESSING || status === OrderStatus.SHIPPED) {
+      if (order.paymentType === PaymentType.ONLINE) {
+        order.paymentStatus = OrderPaymentStatus.PAID;
+        order.isPaid = true;
+      }
+    }
+
+    const saved = await this.orderRepository.save(order);
+
+    if (status !== oldStatus) {
+      let event: NotificationEvent | null = null;
+      if (status === OrderStatus.DELIVERED) {
+        event = NotificationEvent.ORDER_DELIVERED;
+      } else if (status === OrderStatus.SHIPPED) {
+        event = NotificationEvent.ORDER_SHIPPED;
+      } else if (status === OrderStatus.PENDING) {
+        event = NotificationEvent.ORDER_PLACED;
+      }
+
+      if (event) {
+        try {
+          await this.notifyOrderEvent(saved, event);
+        } catch (err) {
+          this.logger.warn(`Failed to send WhatsApp notification on status update: ${err.message}`);
+        }
+      }
+    }
+
+    return saved;
+  }
 }

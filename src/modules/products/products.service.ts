@@ -120,7 +120,7 @@ export class ProductsService {
 
   async remove(id: string): Promise<void> {
     const product = await this.findOne(id);
-    const result = await this.productRepository.delete(product.id);
+    const result = await this.productRepository.softDelete(product.id);
     if (result.affected === 0) {
       throw new NotFoundException(`Product with ID "${id}" not found`);
     }
