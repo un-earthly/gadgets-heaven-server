@@ -23,6 +23,8 @@ export enum UserRole {
   VENDOR = 'vendor',
   CUSTOMER = 'customer',
   USER = 'user',
+  STAFF = 'staff',
+  OWNER = 'owner',
 }
 
 @Entity('users')
@@ -40,9 +42,12 @@ export class User {
   @Column()
   email: string;
 
-  @Column()
+  @Column({ nullable: true })
   @Exclude()
   password: string;
+
+  @Column({ nullable: true })
+  googleId: string;
 
   @Column()
   firstName: string;
@@ -94,7 +99,10 @@ export class User {
   @BeforeUpdate()
   async handleBeforeSave() {
     // Sync isAdmin flag with role
-    this.isAdmin = this.role === UserRole.ADMIN;
+    this.isAdmin =
+      this.role === UserRole.ADMIN ||
+      this.role === UserRole.OWNER ||
+      this.role === UserRole.STAFF;
 
     // Hash password if provided and not already hashed
     if (this.password && !this.password.startsWith('$2')) {
@@ -104,6 +112,7 @@ export class User {
   }
 
   async validatePassword(password: string): Promise<boolean> {
+    if (!this.password) return false;
     return bcrypt.compare(password, this.password);
   }
 }

@@ -50,6 +50,17 @@ export class AdminTenantGuard extends JwtAuthGuard {
       throw new UnauthorizedException('User not authenticated');
     }
 
+    // Enforce admin/staff roles
+    if (
+      user.role !== 'admin' &&
+      user.role !== 'owner' &&
+      user.role !== 'staff'
+    ) {
+      throw new ForbiddenException(
+        'Access Denied: Administrative privilege required.',
+      );
+    }
+
     const resolvedTenantId = getTenantId();
 
     // Enforce tenant scoping: User's tenantId must match the resolved tenant context

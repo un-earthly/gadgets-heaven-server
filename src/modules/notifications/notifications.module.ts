@@ -38,6 +38,6 @@ import { NotificationTemplatesController } from './notification-templates.contro
   ],
   controllers: [NotificationsController, NotificationTemplatesController],
   providers: [NotificationsService, EmailService, SmsService, WhatsAppService],
-  exports: [NotificationsService],
+  exports: [NotificationsService, EmailService],
 })
 export class NotificationsModule {}
